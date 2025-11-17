@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     initTodos();
     initNotepad();
     initSearch();
-    initBackground();
     initKeyboardShortcuts();
 });
 
@@ -192,25 +191,6 @@ function initWidgets() {
         // Setup resize handle
         setupWidgetResize(widget, widgetId);
     });
-
-    // Setup widget menu
-    const menuBtn = document.getElementById('widgetMenuBtn');
-    const menu = document.getElementById('widgetMenu');
-
-    menuBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        menu.classList.toggle('active');
-        updateWidgetMenu();
-    });
-
-    // Close menu when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!menu.contains(e.target) && e.target !== menuBtn) {
-            menu.classList.remove('active');
-        }
-    });
-
-    updateWidgetMenu();
 }
 
 function loadWidgetStates() {
@@ -234,7 +214,6 @@ function renameWidget(widgetId) {
         titleElement.textContent = newName.trim();
         saveWidgetState(widgetId, { customName: newName.trim() });
         updateWidgetBar();
-        updateWidgetMenu();
     }
 }
 
@@ -258,13 +237,12 @@ function closeWidget(widgetId) {
     const widget = document.getElementById(`widget-${widgetId}`);
     const widgetName = widget.querySelector('h2').textContent;
 
-    if (!confirm(`Close "${widgetName}"? You can restore it from the settings menu.`)) {
+    if (!confirm(`Close "${widgetName}"?`)) {
         return;
     }
 
     widget.classList.add('closed');
     saveWidgetState(widgetId, { closed: true });
-    updateWidgetMenu();
     updateWidgetBar();
 }
 
@@ -274,28 +252,6 @@ function restoreWidget(widgetId) {
     widget.classList.remove('minimized');
 
     saveWidgetState(widgetId, { closed: false, minimized: false });
-    updateWidgetMenu();
-}
-
-function updateWidgetMenu() {
-    const menuList = document.getElementById('widgetMenuList');
-    const closedWidgets = Object.entries(widgetStates).filter(([id, state]) => state.closed);
-
-    if (closedWidgets.length === 0) {
-        menuList.innerHTML = '<p class="no-widgets">All widgets are visible</p>';
-        return;
-    }
-
-    menuList.innerHTML = closedWidgets.map(([id]) => {
-        const widgetEl = document.getElementById(`widget-${id}`);
-        const title = widgetEl ? widgetEl.querySelector('h2').textContent : id;
-
-        return `
-            <button class="widget-restore-btn" onclick="restoreWidget('${id}')">
-                ${title}
-            </button>
-        `;
-    }).join('');
 }
 
 // ===== WIDGET BAR =====
@@ -692,8 +648,10 @@ function renderSites() {
 let draggedSiteIndex = null;
 
 function handleSiteDragStart(e) {
-    // Only allow dragging from the site element itself, not from links or buttons
-    if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+    // Only allow dragging from the site icon/image, not from the text link or buttons
+    if (e.target.classList.contains('site-name') ||
+        e.target.tagName === 'BUTTON' ||
+        e.target.closest('button')) {
         e.preventDefault();
         return;
     }
@@ -1142,156 +1100,9 @@ function initKeyboardShortcuts() {
         // Escape to close modals
         if (e.key === 'Escape') {
             closeSearch();
-            document.getElementById('widgetMenu').classList.remove('active');
             document.getElementById('newWidgetMenu').classList.remove('active');
-            document.getElementById('bgPanel').classList.remove('active');
             closeSiteModal();
         }
     });
 }
 
-// ===== BACKGROUND CUSTOMIZATION =====
-const gradients = {
-    default: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%)',
-    ocean: 'linear-gradient(135deg, #0a1931 0%, #185a8d 50%, #0a1931 100%)',
-    sunset: 'linear-gradient(135deg, #1a0a0a 0%, #4a1e1e 50%, #1a0a0a 100%)',
-    forest: 'linear-gradient(135deg, #0a1a0a 0%, #1e4a1e 50%, #0a1a0a 100%)',
-    purple: 'linear-gradient(135deg, #1a0a2e 0%, #4a1e5a 50%, #1a0a2e 100%)',
-    fire: 'linear-gradient(135deg, #2e1a0a 0%, #5a3a1e 50%, #2e1a0a 100%)'
-};
-
-function initBackground() {
-    const bgPanel = document.getElementById('bgPanel');
-    const bgSettingsBtn = document.getElementById('bgSettingsBtn');
-    const bgType = document.getElementById('bgType');
-    const gradientPreset = document.getElementById('gradientPreset');
-    const bgImageUrl = document.getElementById('bgImageUrl');
-    const applyImageBtn = document.getElementById('applyImageBtn');
-    const bgSolidColor = document.getElementById('bgSolidColor');
-    const bgBlur = document.getElementById('bgBlur');
-    const bgOpacity = document.getElementById('bgOpacity');
-    const resetBgBtn = document.getElementById('resetBgBtn');
-
-    // Load saved settings
-    loadBackgroundSettings();
-
-    // Toggle panel
-    bgSettingsBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        bgPanel.classList.toggle('active');
-    });
-
-    // Close panel when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!bgPanel.contains(e.target) && e.target !== bgSettingsBtn) {
-            bgPanel.classList.remove('active');
-        }
-    });
-
-    // Background type change
-    bgType.addEventListener('change', () => {
-        const type = bgType.value;
-        document.getElementById('gradientOptions').style.display = type === 'gradient' ? 'block' : 'none';
-        document.getElementById('imageOptions').style.display = type === 'image' ? 'block' : 'none';
-        document.getElementById('solidOptions').style.display = type === 'solid' ? 'block' : 'none';
-
-        applyBackground();
-    });
-
-    // Gradient preset change
-    gradientPreset.addEventListener('change', applyBackground);
-
-    // Image URL apply
-    applyImageBtn.addEventListener('click', applyBackground);
-
-    // Solid color change
-    bgSolidColor.addEventListener('input', applyBackground);
-
-    // Blur slider
-    bgBlur.addEventListener('input', () => {
-        document.getElementById('blurValue').textContent = bgBlur.value;
-        applyBackground();
-    });
-
-    // Opacity slider
-    bgOpacity.addEventListener('input', () => {
-        document.getElementById('opacityValue').textContent = bgOpacity.value;
-        applyBackground();
-    });
-
-    // Reset button
-    resetBgBtn.addEventListener('click', () => {
-        bgType.value = 'gradient';
-        gradientPreset.value = 'default';
-        bgBlur.value = 0;
-        bgOpacity.value = 100;
-        document.getElementById('blurValue').textContent = '0';
-        document.getElementById('opacityValue').textContent = '100';
-        document.getElementById('gradientOptions').style.display = 'block';
-        document.getElementById('imageOptions').style.display = 'none';
-        document.getElementById('solidOptions').style.display = 'none';
-        applyBackground();
-    });
-}
-
-function applyBackground() {
-    const bgType = document.getElementById('bgType').value;
-    const gradientPreset = document.getElementById('gradientPreset').value;
-    const bgImageUrl = document.getElementById('bgImageUrl').value;
-    const bgSolidColor = document.getElementById('bgSolidColor').value;
-    const blur = document.getElementById('bgBlur').value;
-    const opacity = document.getElementById('bgOpacity').value / 100;
-
-    let background = '';
-
-    if (bgType === 'gradient') {
-        background = gradients[gradientPreset] || gradients.default;
-    } else if (bgType === 'image' && bgImageUrl) {
-        background = `url('${bgImageUrl}')`;
-        document.body.style.backgroundSize = 'cover';
-        document.body.style.backgroundPosition = 'center';
-        document.body.style.backgroundAttachment = 'fixed';
-    } else if (bgType === 'solid') {
-        background = bgSolidColor;
-    }
-
-    document.body.style.background = background;
-    document.body.style.filter = `blur(${blur}px)`;
-    document.body.style.opacity = opacity;
-
-    // Save settings
-    const settings = {
-        type: bgType,
-        gradient: gradientPreset,
-        imageUrl: bgImageUrl,
-        solidColor: bgSolidColor,
-        blur,
-        opacity: opacity * 100
-    };
-
-    localStorage.setItem(STORAGE_KEYS.BACKGROUND, JSON.stringify(settings));
-}
-
-function loadBackgroundSettings() {
-    const saved = localStorage.getItem(STORAGE_KEYS.BACKGROUND);
-    if (!saved) return;
-
-    const settings = JSON.parse(saved);
-
-    document.getElementById('bgType').value = settings.type || 'gradient';
-    document.getElementById('gradientPreset').value = settings.gradient || 'default';
-    document.getElementById('bgImageUrl').value = settings.imageUrl || '';
-    document.getElementById('bgSolidColor').value = settings.solidColor || '#0f0f0f';
-    document.getElementById('bgBlur').value = settings.blur || 0;
-    document.getElementById('bgOpacity').value = settings.opacity || 100;
-    document.getElementById('blurValue').textContent = settings.blur || 0;
-    document.getElementById('opacityValue').textContent = settings.opacity || 100;
-
-    // Show correct options
-    const type = settings.type || 'gradient';
-    document.getElementById('gradientOptions').style.display = type === 'gradient' ? 'block' : 'none';
-    document.getElementById('imageOptions').style.display = type === 'image' ? 'block' : 'none';
-    document.getElementById('solidOptions').style.display = type === 'solid' ? 'block' : 'none';
-
-    applyBackground();
-}
