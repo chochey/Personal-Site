@@ -81,6 +81,12 @@ function initWidgets() {
             widget.style.top = state.y + 'px';
         }
 
+        // Apply saved custom name
+        if (state.customName) {
+            const titleElement = widget.querySelector('h2');
+            titleElement.textContent = state.customName;
+        }
+
         // Apply saved state (minimized/closed)
         if (state.minimized) {
             widget.classList.add('minimized');
@@ -88,6 +94,15 @@ function initWidgets() {
         if (state.closed) {
             widget.classList.add('closed');
         }
+
+        // Add double-click to rename widget
+        const titleElement = widget.querySelector('h2');
+        titleElement.style.cursor = 'pointer';
+        titleElement.title = 'Double-click to rename';
+        titleElement.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            renameWidget(widgetId);
+        });
 
         // Setup drag handlers
         const handle = widget.querySelector('.widget-drag-handle');
@@ -195,6 +210,21 @@ function saveWidgetState(widgetId, updates) {
     localStorage.setItem(STORAGE_KEYS.WIDGETS, JSON.stringify(widgetStates));
 }
 
+function renameWidget(widgetId) {
+    const widget = document.getElementById(`widget-${widgetId}`);
+    const titleElement = widget.querySelector('h2');
+    const currentTitle = titleElement.textContent;
+
+    const newName = prompt('Enter new widget name:', currentTitle);
+
+    if (newName && newName.trim() !== '' && newName !== currentTitle) {
+        titleElement.textContent = newName.trim();
+        saveWidgetState(widgetId, { customName: newName.trim() });
+        updateWidgetBar();
+        updateWidgetMenu();
+    }
+}
+
 function toggleMinimize(widgetId) {
     const widget = document.getElementById(`widget-${widgetId}`);
     const isMinimized = widget.classList.toggle('minimized');
@@ -213,10 +243,16 @@ function restoreFromBar(widgetId) {
 
 function closeWidget(widgetId) {
     const widget = document.getElementById(`widget-${widgetId}`);
-    widget.classList.add('closed');
+    const widgetName = widget.querySelector('h2').textContent;
 
+    if (!confirm(`Close "${widgetName}"? You can restore it from the settings menu.`)) {
+        return;
+    }
+
+    widget.classList.add('closed');
     saveWidgetState(widgetId, { closed: true });
     updateWidgetMenu();
+    updateWidgetBar();
 }
 
 function restoreWidget(widgetId) {
@@ -473,6 +509,15 @@ function setupWidgetControls(widget, widgetId) {
     closeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         closeWidget(widgetId);
+    });
+
+    // Add double-click to rename widget
+    const titleElement = widget.querySelector('h2');
+    titleElement.style.cursor = 'pointer';
+    titleElement.title = 'Double-click to rename';
+    titleElement.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        renameWidget(widgetId);
     });
 }
 

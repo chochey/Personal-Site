@@ -360,6 +360,12 @@ body {
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
+    user-select: none;
+    transition: color 0.2s;
+}
+
+.widget-header h2:hover {
+    color: var(--accent-primary);
 }
 
 .widget-controls {
