@@ -262,89 +262,11 @@ function initWidgets() {
             widget.classList.add('closed');
         }
 
-        // Add double-click to rename widget
-        const titleElement = widget.querySelector('h2');
-        titleElement.style.cursor = 'pointer';
-        titleElement.title = 'Double-click to rename';
-        titleElement.addEventListener('dblclick', (e) => {
-            e.stopPropagation();
-            renameWidget(widgetId);
-        });
+        // Setup widget controls (minimize, close, rename)
+        setupWidgetControls(widget, widgetId);
 
         // Setup drag handlers
-        const handle = widget.querySelector('.widget-drag-handle');
-        const header = widget.querySelector('.widget-header');
-
-        let isDragging = false;
-        let currentX;
-        let currentY;
-        let initialX;
-        let initialY;
-
-        const dragStart = (e) => {
-            // Don't drag if clicking on buttons or inputs
-            if (e.target.closest('button, input, select, textarea')) return;
-
-            if (e.type === 'touchstart') {
-                initialX = e.touches[0].clientX - (parseInt(widget.style.left) || widget.offsetLeft);
-                initialY = e.touches[0].clientY - (parseInt(widget.style.top) || widget.offsetTop);
-            } else {
-                initialX = e.clientX - (parseInt(widget.style.left) || widget.offsetLeft);
-                initialY = e.clientY - (parseInt(widget.style.top) || widget.offsetTop);
-            }
-
-            isDragging = true;
-            widget.classList.add('dragging');
-        };
-
-        const drag = (e) => {
-            if (!isDragging) return;
-            e.preventDefault();
-
-            if (e.type === 'touchmove') {
-                currentX = e.touches[0].clientX - initialX;
-                currentY = e.touches[0].clientY - initialY;
-            } else {
-                currentX = e.clientX - initialX;
-                currentY = e.clientY - initialY;
-            }
-
-            widget.style.left = currentX + 'px';
-            widget.style.top = currentY + 'px';
-        };
-
-        const dragEnd = () => {
-            if (!isDragging) return;
-            isDragging = false;
-            widget.classList.remove('dragging');
-
-            // Save position
-            saveWidgetState(widgetId, {
-                x: parseInt(widget.style.left) || widget.offsetLeft,
-                y: parseInt(widget.style.top) || widget.offsetTop
-            });
-        };
-
-        header.addEventListener('mousedown', dragStart);
-        header.addEventListener('touchstart', dragStart);
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('touchmove', drag);
-        document.addEventListener('mouseup', dragEnd);
-        document.addEventListener('touchend', dragEnd);
-
-        // Setup minimize button
-        const minimizeBtn = widget.querySelector('.widget-minimize');
-        minimizeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            toggleMinimize(widgetId);
-        });
-
-        // Setup close button
-        const closeBtn = widget.querySelector('.widget-close');
-        closeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            closeWidget(widgetId);
-        });
+        setupWidgetDragging(widget, widgetId);
 
         // Setup resize handle
         setupWidgetResize(widget, widgetId);
@@ -716,25 +638,31 @@ function setupWidgetDragging(widget, widgetId) {
 
 function setupWidgetControls(widget, widgetId) {
     const minimizeBtn = widget.querySelector('.widget-minimize');
-    minimizeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleMinimize(widgetId);
-    });
+    if (minimizeBtn) {
+        minimizeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMinimize(widgetId);
+        });
+    }
 
     const closeBtn = widget.querySelector('.widget-close');
-    closeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        closeWidget(widgetId);
-    });
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeWidget(widgetId);
+        });
+    }
 
     // Add double-click to rename widget
     const titleElement = widget.querySelector('h2');
-    titleElement.style.cursor = 'pointer';
-    titleElement.title = 'Double-click to rename';
-    titleElement.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        renameWidget(widgetId);
-    });
+    if (titleElement) {
+        titleElement.style.cursor = 'pointer';
+        titleElement.title = 'Double-click to rename';
+        titleElement.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            renameWidget(widgetId);
+        });
+    }
 }
 
 function setupWidgetResize(widget, widgetId) {
