@@ -430,14 +430,25 @@ function createNewWidget(type) {
         },
         'stickynotes': {
             icon: '📋',
-            title: 'Sticky Notes',
+            title: 'Note',
             content: `
-                <div id="stickynotes-${newWidgetId}" class="stickynotes-container">
-                    <div class="stickynotes-grid" id="stickynotesGrid-${newWidgetId}"></div>
+                <div class="stickynote-single" id="stickynote-${newWidgetId}">
+                    <input
+                        type="text"
+                        class="stickynote-title"
+                        id="stickynoteTitle-${newWidgetId}"
+                        placeholder="Note title..."
+                        value="New Note"
+                    />
+                    <textarea
+                        class="stickynote-content"
+                        id="stickynoteContent-${newWidgetId}"
+                        placeholder="Type your note here..."
+                    ></textarea>
                 </div>
             `,
-            hasAddBtn: true,
-            addBtnAction: 'addStickyNote'
+            hasAddBtn: false,
+            isStickyNote: true
         }
     };
 
@@ -458,6 +469,7 @@ function createNewWidget(type) {
             <div class="widget-controls">
                 ${template.hasAddBtn ? '<button class="btn-add" id="addBtn-' + newWidgetId + '" title="Add">+</button>' : ''}
                 ${template.hasSaveStatus ? '<span class="auto-save" id="saveStatus-' + newWidgetId + '">Auto-saved</span>' : ''}
+                ${template.isStickyNote ? '<button class="widget-btn" id="colorBtn-' + newWidgetId + '" title="Change color">🎨</button>' : ''}
                 <button class="widget-btn widget-minimize" title="Minimize">−</button>
                 <button class="widget-btn widget-close" title="Close">×</button>
             </div>
@@ -469,6 +481,11 @@ function createNewWidget(type) {
     `;
 
     dashboard.appendChild(widget);
+
+    // Apply sticky note styling
+    if (template.isStickyNote) {
+        widget.classList.add('widget-stickynote', 'widget-stickynote-yellow');
+    }
 
     // Initialize the new widget
     const widgetId = newWidgetId;
@@ -484,14 +501,18 @@ function createNewWidget(type) {
     } else if (type === 'habits') {
         initHabitsWidget(newWidgetId);
     } else if (type === 'stickynotes') {
-        initStickyNotesWidget(newWidgetId);
+        initSingleStickyNote(newWidgetId, widget);
     }
 
     // Close the new widget menu
     document.getElementById('newWidgetMenu').classList.remove('active');
 
     // Save the widget state
-    saveWidgetState(widgetId, { x: 50, y: 50, closed: false, minimized: false });
+    const initialState = { x: 50, y: 50, closed: false, minimized: false };
+    if (type === 'stickynotes') {
+        initialState.stickyNoteData = { title: 'New Note', content: '', color: 'yellow' };
+    }
+    saveWidgetState(widgetId, initialState);
     updateWidgetBar();
 }
 
@@ -1891,106 +1912,81 @@ function saveHabits(widgetId) {
     localStorage.setItem(`${STORAGE_KEYS.HABITS}-${widgetId}`, JSON.stringify(habitsData[widgetId]));
 }
 
-// ===== STICKY NOTES WIDGET =====
-const stickyNotesData = {};
+// ===== SINGLE STICKY NOTE WIDGET =====
+function initSingleStickyNote(widgetId, widget) {
+    const state = widgetStates[widgetId];
+    const noteData = state?.stickyNoteData || { title: 'New Note', content: '', color: 'yellow' };
 
-function initStickyNotesWidget(widgetId) {
-    const saved = localStorage.getItem(`${STORAGE_KEYS.STICKY_NOTES}-${widgetId}`);
-    stickyNotesData[widgetId] = saved ? JSON.parse(saved) : [];
+    // Apply saved color
+    widget.className = widget.className.replace(/widget-stickynote-\w+/, '');
+    widget.classList.add(`widget-stickynote-${noteData.color}`);
 
-    // Setup add button
-    const addBtn = document.getElementById(`addBtn-${widgetId}`);
-    if (addBtn) {
-        addBtn.addEventListener('click', () => addStickyNote(widgetId));
+    // Set saved values
+    const titleInput = document.getElementById(`stickynoteTitle-${widgetId}`);
+    const contentInput = document.getElementById(`stickynoteContent-${widgetId}`);
+
+    if (titleInput) titleInput.value = noteData.title;
+    if (contentInput) contentInput.value = noteData.content;
+
+    // Setup title input
+    if (titleInput) {
+        titleInput.addEventListener('input', () => {
+            saveStickyNoteData(widgetId, titleInput.value, contentInput.value);
+        });
+        // Select title on creation
+        setTimeout(() => titleInput.select(), 100);
     }
 
-    renderStickyNotes(widgetId);
+    // Setup content textarea
+    if (contentInput) {
+        contentInput.addEventListener('input', () => {
+            saveStickyNoteData(widgetId, titleInput.value, contentInput.value);
+        });
+    }
+
+    // Setup color button
+    const colorBtn = document.getElementById(`colorBtn-${widgetId}`);
+    if (colorBtn) {
+        colorBtn.addEventListener('click', () => {
+            changeStickyNoteColorSingle(widgetId, widget);
+        });
+    }
 }
 
-function addStickyNote(widgetId) {
-    stickyNotesData[widgetId].push({
-        title: 'New Note',
-        content: '',
-        color: 'yellow',
-        createdAt: Date.now()
-    });
+function saveStickyNoteData(widgetId, title, content) {
+    const state = widgetStates[widgetId] || {};
+    const currentColor = state.stickyNoteData?.color || 'yellow';
 
-    saveStickyNotes(widgetId);
-    renderStickyNotes(widgetId);
-    playSound('click');
+    state.stickyNoteData = {
+        title: title,
+        content: content,
+        color: currentColor
+    };
 
-    // Focus the new note title
-    setTimeout(() => {
-        const titles = document.querySelectorAll(`#stickynotesGrid-${widgetId} .sticky-note-title`);
-        if (titles.length > 0) {
-            const lastTitle = titles[titles.length - 1];
-            lastTitle.select();
-        }
-    }, 100);
+    saveWidgetState(widgetId, state);
 }
 
-function updateStickyNoteTitle(widgetId, noteIndex, title) {
-    stickyNotesData[widgetId][noteIndex].title = title;
-    saveStickyNotes(widgetId);
-}
-
-function updateStickyNote(widgetId, noteIndex, content) {
-    stickyNotesData[widgetId][noteIndex].content = content;
-    saveStickyNotes(widgetId);
-}
-
-function changeStickyNoteColor(widgetId, noteIndex) {
+function changeStickyNoteColorSingle(widgetId, widget) {
     const colors = ['yellow', 'blue', 'green', 'pink', 'purple', 'orange'];
-    const currentColor = stickyNotesData[widgetId][noteIndex].color;
+    const state = widgetStates[widgetId];
+    const currentColor = state?.stickyNoteData?.color || 'yellow';
     const currentIndex = colors.indexOf(currentColor);
     const nextIndex = (currentIndex + 1) % colors.length;
+    const nextColor = colors[nextIndex];
 
-    stickyNotesData[widgetId][noteIndex].color = colors[nextIndex];
-    saveStickyNotes(widgetId);
-    renderStickyNotes(widgetId);
-    playSound('click');
-}
+    // Update widget styling
+    widget.className = widget.className.replace(/widget-stickynote-\w+/, '');
+    widget.classList.add(`widget-stickynote-${nextColor}`);
 
-function deleteStickyNote(widgetId, noteIndex) {
-    stickyNotesData[widgetId].splice(noteIndex, 1);
-    saveStickyNotes(widgetId);
-    renderStickyNotes(widgetId);
-    playSound('click');
-}
-
-function renderStickyNotes(widgetId) {
-    const container = document.getElementById(`stickynotesGrid-${widgetId}`);
-    const notes = stickyNotesData[widgetId];
-
-    if (!notes || notes.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">Click + to add a sticky note</div></div>';
-        return;
+    // Save color
+    if (state.stickyNoteData) {
+        state.stickyNoteData.color = nextColor;
+    } else {
+        state.stickyNoteData = { title: 'New Note', content: '', color: nextColor };
     }
 
-    container.innerHTML = notes.map((note, index) => `
-        <div class="sticky-note sticky-note-${note.color}">
-            <div class="sticky-note-header">
-                <input
-                    type="text"
-                    class="sticky-note-title"
-                    value="${escapeHtml(note.title || 'New Note')}"
-                    oninput="updateStickyNoteTitle('${widgetId}', ${index}, this.value)"
-                    placeholder="Note title..."
-                />
-                <button class="sticky-note-color-btn" onclick="changeStickyNoteColor('${widgetId}', ${index})" title="Change color">🎨</button>
-                <button class="sticky-note-delete" onclick="deleteStickyNote('${widgetId}', ${index})" title="Delete">×</button>
-            </div>
-            <textarea
-                class="sticky-note-content"
-                placeholder="Type your note here..."
-                oninput="updateStickyNote('${widgetId}', ${index}, this.value)"
-            >${escapeHtml(note.content)}</textarea>
-        </div>
-    `).join('');
-}
-
-function saveStickyNotes(widgetId) {
-    localStorage.setItem(`${STORAGE_KEYS.STICKY_NOTES}-${widgetId}`, JSON.stringify(stickyNotesData[widgetId]));
+    saveWidgetState(widgetId, state);
+    playSound('click');
 }
 
 // ===== BACKGROUND GRADIENTS =====
