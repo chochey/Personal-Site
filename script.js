@@ -433,16 +433,11 @@ function createNewWidget(type) {
             title: 'Sticky Notes',
             content: `
                 <div id="stickynotes-${newWidgetId}" class="stickynotes-container">
-                    <div class="stickynotes-controls">
-                        <button class="btn btn-primary btn-sm" onclick="addStickyNote('${newWidgetId}', 'yellow')">+ Yellow</button>
-                        <button class="btn btn-primary btn-sm" onclick="addStickyNote('${newWidgetId}', 'blue')">+ Blue</button>
-                        <button class="btn btn-primary btn-sm" onclick="addStickyNote('${newWidgetId}', 'green')">+ Green</button>
-                        <button class="btn btn-primary btn-sm" onclick="addStickyNote('${newWidgetId}', 'pink')">+ Pink</button>
-                    </div>
                     <div class="stickynotes-grid" id="stickynotesGrid-${newWidgetId}"></div>
                 </div>
             `,
-            hasAddBtn: false
+            hasAddBtn: true,
+            addBtnAction: 'addStickyNote'
         }
     };
 
@@ -1903,13 +1898,20 @@ function initStickyNotesWidget(widgetId) {
     const saved = localStorage.getItem(`${STORAGE_KEYS.STICKY_NOTES}-${widgetId}`);
     stickyNotesData[widgetId] = saved ? JSON.parse(saved) : [];
 
+    // Setup add button
+    const addBtn = document.getElementById(`addBtn-${widgetId}`);
+    if (addBtn) {
+        addBtn.addEventListener('click', () => addStickyNote(widgetId));
+    }
+
     renderStickyNotes(widgetId);
 }
 
-function addStickyNote(widgetId, color) {
+function addStickyNote(widgetId) {
     stickyNotesData[widgetId].push({
+        title: 'New Note',
         content: '',
-        color: color,
+        color: 'yellow',
         createdAt: Date.now()
     });
 
@@ -1917,18 +1919,36 @@ function addStickyNote(widgetId, color) {
     renderStickyNotes(widgetId);
     playSound('click');
 
-    // Focus the new note
+    // Focus the new note title
     setTimeout(() => {
-        const notes = document.querySelectorAll(`#stickynotesGrid-${widgetId} .sticky-note-content`);
-        if (notes.length > 0) {
-            notes[notes.length - 1].focus();
+        const titles = document.querySelectorAll(`#stickynotesGrid-${widgetId} .sticky-note-title`);
+        if (titles.length > 0) {
+            const lastTitle = titles[titles.length - 1];
+            lastTitle.select();
         }
     }, 100);
+}
+
+function updateStickyNoteTitle(widgetId, noteIndex, title) {
+    stickyNotesData[widgetId][noteIndex].title = title;
+    saveStickyNotes(widgetId);
 }
 
 function updateStickyNote(widgetId, noteIndex, content) {
     stickyNotesData[widgetId][noteIndex].content = content;
     saveStickyNotes(widgetId);
+}
+
+function changeStickyNoteColor(widgetId, noteIndex) {
+    const colors = ['yellow', 'blue', 'green', 'pink', 'purple', 'orange'];
+    const currentColor = stickyNotesData[widgetId][noteIndex].color;
+    const currentIndex = colors.indexOf(currentColor);
+    const nextIndex = (currentIndex + 1) % colors.length;
+
+    stickyNotesData[widgetId][noteIndex].color = colors[nextIndex];
+    saveStickyNotes(widgetId);
+    renderStickyNotes(widgetId);
+    playSound('click');
 }
 
 function deleteStickyNote(widgetId, noteIndex) {
@@ -1943,16 +1963,26 @@ function renderStickyNotes(widgetId) {
     const notes = stickyNotesData[widgetId];
 
     if (!notes || notes.length === 0) {
-        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">Click a color to add a sticky note</div></div>';
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">Click + to add a sticky note</div></div>';
         return;
     }
 
     container.innerHTML = notes.map((note, index) => `
         <div class="sticky-note sticky-note-${note.color}">
-            <button class="sticky-note-delete" onclick="deleteStickyNote('${widgetId}', ${index})">×</button>
+            <div class="sticky-note-header">
+                <input
+                    type="text"
+                    class="sticky-note-title"
+                    value="${escapeHtml(note.title || 'New Note')}"
+                    oninput="updateStickyNoteTitle('${widgetId}', ${index}, this.value)"
+                    placeholder="Note title..."
+                />
+                <button class="sticky-note-color-btn" onclick="changeStickyNoteColor('${widgetId}', ${index})" title="Change color">🎨</button>
+                <button class="sticky-note-delete" onclick="deleteStickyNote('${widgetId}', ${index})" title="Delete">×</button>
+            </div>
             <textarea
                 class="sticky-note-content"
-                placeholder="Type here..."
+                placeholder="Type your note here..."
                 oninput="updateStickyNote('${widgetId}', ${index}, this.value)"
             >${escapeHtml(note.content)}</textarea>
         </div>
