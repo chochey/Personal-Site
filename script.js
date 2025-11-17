@@ -298,8 +298,18 @@ function renameWidget(widgetId) {
 }
 
 function toggleMinimize(widgetId) {
+    console.log('toggleMinimize called with widgetId:', widgetId);
+    console.log('Looking for element with ID:', `widget-${widgetId}`);
+
     const widget = document.getElementById(`widget-${widgetId}`);
+    console.log('Widget element found:', widget);
+
+    if (!widget) {
+        console.error('Widget not found:', widgetId);
+        return;
+    }
     const isMinimized = widget.classList.toggle('minimized');
+    console.log('Widget minimized state:', isMinimized);
 
     saveWidgetState(widgetId, { minimized: isMinimized });
     updateWidgetBar();
@@ -307,6 +317,10 @@ function toggleMinimize(widgetId) {
 
 function restoreFromBar(widgetId) {
     const widget = document.getElementById(`widget-${widgetId}`);
+    if (!widget) {
+        console.error('Widget not found:', widgetId);
+        return;
+    }
     widget.classList.remove('minimized');
 
     saveWidgetState(widgetId, { minimized: false });
@@ -315,6 +329,10 @@ function restoreFromBar(widgetId) {
 
 function closeWidget(widgetId) {
     const widget = document.getElementById(`widget-${widgetId}`);
+    if (!widget) {
+        console.error('Widget not found:', widgetId);
+        return;
+    }
     const widgetName = widget.querySelector('h2').textContent;
 
     if (!confirm(`Close "${widgetName}"?`)) {
@@ -328,6 +346,10 @@ function closeWidget(widgetId) {
 
 function restoreWidget(widgetId) {
     const widget = document.getElementById(`widget-${widgetId}`);
+    if (!widget) {
+        console.error('Widget not found:', widgetId);
+        return;
+    }
     widget.classList.remove('closed');
     widget.classList.remove('minimized');
 
@@ -637,12 +659,19 @@ function setupWidgetDragging(widget, widgetId) {
 }
 
 function setupWidgetControls(widget, widgetId) {
+    console.log('setupWidgetControls called for:', widgetId, widget);
+
     const minimizeBtn = widget.querySelector('.widget-minimize');
+    console.log('Minimize button found:', minimizeBtn, 'for widget:', widgetId);
+
     if (minimizeBtn) {
         minimizeBtn.addEventListener('click', (e) => {
+            console.log('Minimize button clicked for:', widgetId);
             e.stopPropagation();
             toggleMinimize(widgetId);
         });
+    } else {
+        console.warn('No minimize button found for widget:', widgetId);
     }
 
     const closeBtn = widget.querySelector('.widget-close');
@@ -651,6 +680,8 @@ function setupWidgetControls(widget, widgetId) {
             e.stopPropagation();
             closeWidget(widgetId);
         });
+    } else {
+        console.warn('No close button found for widget:', widgetId);
     }
 
     // Add double-click to rename widget
