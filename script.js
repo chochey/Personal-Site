@@ -23,10 +23,11 @@ function initTime() {
 function updateTime() {
     const now = new Date();
 
-    // Update time
+    // Update time with seconds
     const timeStr = now.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
+        second: '2-digit',
         hour12: true
     });
     document.getElementById('time').textContent = timeStr;
@@ -59,12 +60,13 @@ function initGreeting() {
 
 // ===== PINNED SITES =====
 let pinnedSites = [];
+let editingIndex = null;
 
 function initPinnedSites() {
     loadSites();
     renderSites();
 
-    document.getElementById('addSiteBtn').addEventListener('click', openSiteModal);
+    document.getElementById('addSiteBtn').addEventListener('click', () => openSiteModal());
     document.getElementById('cancelSite').addEventListener('click', closeSiteModal);
     document.getElementById('saveSite').addEventListener('click', saveSite);
 
@@ -78,10 +80,10 @@ function initPinnedSites() {
     // Add default sites if none exist
     if (pinnedSites.length === 0) {
         pinnedSites = [
-            { name: 'Google', url: 'https://google.com', icon: '🔍' },
-            { name: 'YouTube', url: 'https://youtube.com', icon: '📺' },
-            { name: 'GitHub', url: 'https://github.com', icon: '💻' },
-            { name: 'Gmail', url: 'https://gmail.com', icon: '📧' }
+            { name: 'Google', url: 'https://google.com' },
+            { name: 'YouTube', url: 'https://youtube.com' },
+            { name: 'GitHub', url: 'https://github.com' },
+            { name: 'Gmail', url: 'https://gmail.com' }
         ];
         saveSitesToStorage();
         renderSites();
@@ -102,31 +104,59 @@ function renderSites() {
     grid.innerHTML = '';
 
     pinnedSites.forEach((site, index) => {
-        const siteEl = document.createElement('a');
+        const siteEl = document.createElement('div');
         siteEl.className = 'site-item';
-        siteEl.href = site.url;
-        siteEl.target = '_blank';
-        siteEl.rel = 'noopener noreferrer';
+
+        // Extract domain for favicon
+        const faviconUrl = getFaviconUrl(site.url);
 
         siteEl.innerHTML = `
-            <div class="site-icon">${site.icon}</div>
-            <div class="site-name">${site.name}</div>
-            <button class="delete-site" onclick="deleteSite(event, ${index})">×</button>
+            <a href="${site.url}" target="_blank" rel="noopener noreferrer" class="site-link">
+                <img src="${faviconUrl}" alt="${site.name}" class="site-icon" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>'">
+                <div class="site-name">${escapeHtml(site.name)}</div>
+            </a>
+            <button class="edit-site" onclick="editSite(event, ${index})" title="Edit">✎</button>
+            <button class="delete-site" onclick="deleteSite(event, ${index})" title="Delete">×</button>
         `;
 
         grid.appendChild(siteEl);
     });
 }
 
-function openSiteModal() {
-    document.getElementById('siteModal').classList.add('active');
-    document.getElementById('siteName').value = '';
-    document.getElementById('siteUrl').value = '';
+function getFaviconUrl(url) {
+    try {
+        const domain = new URL(url).hostname;
+        // Use Google's favicon service
+        return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+    } catch (e) {
+        return 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌐</text></svg>';
+    }
+}
+
+function openSiteModal(index = null) {
+    editingIndex = index;
+    const modal = document.getElementById('siteModal');
+    const title = modal.querySelector('h3');
+
+    if (index !== null) {
+        // Editing existing site
+        title.textContent = 'Edit Website';
+        document.getElementById('siteName').value = pinnedSites[index].name;
+        document.getElementById('siteUrl').value = pinnedSites[index].url;
+    } else {
+        // Adding new site
+        title.textContent = 'Add Website';
+        document.getElementById('siteName').value = '';
+        document.getElementById('siteUrl').value = '';
+    }
+
+    modal.classList.add('active');
     document.getElementById('siteName').focus();
 }
 
 function closeSiteModal() {
     document.getElementById('siteModal').classList.remove('active');
+    editingIndex = null;
 }
 
 function saveSite() {
@@ -144,14 +174,23 @@ function saveSite() {
         finalUrl = 'https://' + url;
     }
 
-    // Generate random emoji icon
-    const emojis = ['🌐', '⭐', '🔗', '📱', '💼', '🎮', '🎵', '📚', '🛒', '✈️'];
-    const icon = emojis[Math.floor(Math.random() * emojis.length)];
+    if (editingIndex !== null) {
+        // Update existing site
+        pinnedSites[editingIndex] = { name, url: finalUrl };
+    } else {
+        // Add new site
+        pinnedSites.push({ name, url: finalUrl });
+    }
 
-    pinnedSites.push({ name, url: finalUrl, icon });
     saveSitesToStorage();
     renderSites();
     closeSiteModal();
+}
+
+function editSite(event, index) {
+    event.preventDefault();
+    event.stopPropagation();
+    openSiteModal(index);
 }
 
 function deleteSite(event, index) {

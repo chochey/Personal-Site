@@ -106,12 +106,9 @@ body {
     border-radius: 12px;
     padding: 20px 12px;
     text-align: center;
-    cursor: pointer;
     transition: all 0.2s;
     border: 1px solid var(--border-color);
     position: relative;
-    text-decoration: none;
-    color: var(--text-primary);
     display: block;
 }
 
@@ -121,15 +118,44 @@ body {
     border-color: var(--accent-primary);
 }
 
+.site-item .site-link {
+    text-decoration: none;
+    color: var(--text-primary);
+    display: block;
+    cursor: pointer;
+}
+
 .site-item .site-icon {
-    font-size: 2rem;
-    margin-bottom: 8px;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 8px;
+    display: block;
+    border-radius: 8px;
 }
 
 .site-item .site-name {
     font-size: 0.9rem;
     color: var(--text-secondary);
     word-wrap: break-word;
+}
+
+.site-item .edit-site {
+    position: absolute;
+    top: 5px;
+    right: 28px;
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .site-item .delete-site {
@@ -151,6 +177,7 @@ body {
     justify-content: center;
 }
 
+.site-item:hover .edit-site,
 .site-item:hover .delete-site {
     opacity: 1;
 }
