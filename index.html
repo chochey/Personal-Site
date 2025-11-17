@@ -26,6 +26,32 @@
             </div>
         </div>
 
+        <!-- Widget Bar (Right Side) -->
+        <div class="widget-bar">
+            <button class="widget-bar-btn new-widget-btn" id="newWidgetBtn" title="Create New Widget">+</button>
+            <div class="widget-bar-divider"></div>
+            <div class="widget-bar-items" id="widgetBarItems"></div>
+        </div>
+
+        <!-- New Widget Menu -->
+        <div class="new-widget-menu" id="newWidgetMenu">
+            <div class="new-widget-menu-content">
+                <h3>Create New Widget</h3>
+                <button class="widget-type-btn" onclick="createNewWidget('sites')">
+                    <span class="widget-type-icon">📌</span>
+                    <span class="widget-type-name">Pinned Sites</span>
+                </button>
+                <button class="widget-type-btn" onclick="createNewWidget('todos')">
+                    <span class="widget-type-icon">✓</span>
+                    <span class="widget-type-name">Todo List</span>
+                </button>
+                <button class="widget-type-btn" onclick="createNewWidget('notepad')">
+                    <span class="widget-type-icon">📝</span>
+                    <span class="widget-type-name">Notepad</span>
+                </button>
+            </div>
+        </div>
+
         <!-- Main Dashboard - Widgets Container -->
         <main class="dashboard">
             <!-- Pinned Websites Widget -->

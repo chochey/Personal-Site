@@ -8,12 +8,14 @@ const STORAGE_KEYS = {
 
 // Widget state
 let widgetStates = {};
+let widgetCounter = 1;
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     initTime();
     initGreeting();
     initWidgets();
+    initWidgetBar();
     initPinnedSites();
     initTodos();
     initNotepad();
@@ -198,6 +200,15 @@ function toggleMinimize(widgetId) {
     const isMinimized = widget.classList.toggle('minimized');
 
     saveWidgetState(widgetId, { minimized: isMinimized });
+    updateWidgetBar();
+}
+
+function restoreFromBar(widgetId) {
+    const widget = document.getElementById(`widget-${widgetId}`);
+    widget.classList.remove('minimized');
+
+    saveWidgetState(widgetId, { minimized: false });
+    updateWidgetBar();
 }
 
 function closeWidget(widgetId) {
@@ -226,17 +237,268 @@ function updateWidgetMenu() {
         return;
     }
 
-    const widgetNames = {
-        'sites': '📌 Pinned Sites',
-        'todos': '✓ Todo List',
-        'notepad': '📝 Notepad'
+    menuList.innerHTML = closedWidgets.map(([id]) => {
+        const widgetEl = document.getElementById(`widget-${id}`);
+        const title = widgetEl ? widgetEl.querySelector('h2').textContent : id;
+
+        return `
+            <button class="widget-restore-btn" onclick="restoreWidget('${id}')">
+                ${title}
+            </button>
+        `;
+    }).join('');
+}
+
+// ===== WIDGET BAR =====
+function initWidgetBar() {
+    const newWidgetBtn = document.getElementById('newWidgetBtn');
+    const newWidgetMenu = document.getElementById('newWidgetMenu');
+
+    newWidgetBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        newWidgetMenu.classList.toggle('active');
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!newWidgetMenu.contains(e.target) && e.target !== newWidgetBtn) {
+            newWidgetMenu.classList.remove('active');
+        }
+    });
+
+    updateWidgetBar();
+}
+
+function updateWidgetBar() {
+    const barItems = document.getElementById('widgetBarItems');
+    const widgets = document.querySelectorAll('.widget');
+
+    const minimizedWidgets = Array.from(widgets).filter(w => w.classList.contains('minimized') && !w.classList.contains('closed'));
+
+    if (minimizedWidgets.length === 0) {
+        barItems.innerHTML = '';
+        return;
+    }
+
+    barItems.innerHTML = minimizedWidgets.map(widget => {
+        const widgetId = widget.dataset.widgetId;
+        const title = widget.querySelector('h2').textContent;
+
+        return `
+            <button class="widget-bar-btn minimized-widget-btn" onclick="restoreFromBar('${widgetId}')" title="${title}">
+                ${title.split(' ')[0]}
+            </button>
+        `;
+    }).join('');
+}
+
+function createNewWidget(type) {
+    const dashboard = document.querySelector('.dashboard');
+    const newWidgetId = `${type}-${widgetCounter++}`;
+
+    const widgetTemplates = {
+        'sites': {
+            icon: '📌',
+            title: 'Pinned Sites',
+            content: '<div class="sites-grid" id="sitesGrid-' + newWidgetId + '"></div>',
+            hasAddBtn: true
+        },
+        'todos': {
+            icon: '✓',
+            title: 'Todo List',
+            content: `
+                <div class="todo-input-container">
+                    <input type="text" id="todoInput-${newWidgetId}" placeholder="Add a new task..." class="input">
+                    <button class="btn btn-primary" onclick="addTodoToWidget('${newWidgetId}')">Add</button>
+                </div>
+                <ul class="todo-list" id="todoList-${newWidgetId}"></ul>
+            `,
+            hasAddBtn: false
+        },
+        'notepad': {
+            icon: '📝',
+            title: 'Notepad',
+            content: `
+                <div class="editor-toolbar">
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" onclick="formatDoc('bold')" title="Bold (Ctrl+B)"><b>B</b></button>
+                        <button class="toolbar-btn" onclick="formatDoc('italic')" title="Italic (Ctrl+I)"><i>I</i></button>
+                        <button class="toolbar-btn" onclick="formatDoc('underline')" title="Underline (Ctrl+U)"><u>U</u></button>
+                        <button class="toolbar-btn" onclick="formatDoc('strikeThrough')" title="Strikethrough"><s>S</s></button>
+                    </div>
+                    <div class="toolbar-group">
+                        <select class="toolbar-select" onchange="formatDoc('fontSize', this.value); this.selectedIndex=0;" title="Font Size">
+                            <option value="" selected disabled>Size</option>
+                            <option value="1">Small</option>
+                            <option value="3">Normal</option>
+                            <option value="5">Large</option>
+                            <option value="7">Extra Large</option>
+                        </select>
+                        <select class="toolbar-select" onchange="formatDoc('formatBlock', this.value); this.selectedIndex=0;" title="Text Style">
+                            <option value="" selected disabled>Style</option>
+                            <option value="p">Paragraph</option>
+                            <option value="h1">Heading 1</option>
+                            <option value="h2">Heading 2</option>
+                            <option value="h3">Heading 3</option>
+                        </select>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" onclick="formatDoc('insertUnorderedList')" title="Bullet List">• List</button>
+                        <button class="toolbar-btn" onclick="formatDoc('insertOrderedList')" title="Numbered List">1. List</button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" onclick="formatDoc('justifyLeft')" title="Align Left">⬅</button>
+                        <button class="toolbar-btn" onclick="formatDoc('justifyCenter')" title="Align Center">↔</button>
+                        <button class="toolbar-btn" onclick="formatDoc('justifyRight')" title="Align Right">➡</button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" onclick="formatDoc('removeFormat')" title="Clear Formatting">Clear</button>
+                    </div>
+                </div>
+                <div id="notepad-${newWidgetId}" class="notepad" contenteditable="true" data-placeholder="Start typing your notes here..."></div>
+            `,
+            hasAddBtn: false,
+            hasSaveStatus: true
+        }
     };
 
-    menuList.innerHTML = closedWidgets.map(([id]) => `
-        <button class="widget-restore-btn" onclick="restoreWidget('${id}')">
-            ${widgetNames[id] || id}
-        </button>
-    `).join('');
+    const template = widgetTemplates[type];
+    if (!template) return;
+
+    const widget = document.createElement('section');
+    widget.className = 'widget';
+    widget.id = `widget-${newWidgetId}`;
+    widget.dataset.widgetId = newWidgetId;
+    widget.style.left = '50px';
+    widget.style.top = '50px';
+
+    widget.innerHTML = `
+        <div class="widget-header">
+            <span class="widget-drag-handle">⋮⋮</span>
+            <h2>${template.icon} ${template.title}</h2>
+            <div class="widget-controls">
+                ${template.hasAddBtn ? '<button class="btn-add" id="addBtn-' + newWidgetId + '" title="Add">+</button>' : ''}
+                ${template.hasSaveStatus ? '<span class="auto-save" id="saveStatus-' + newWidgetId + '">Auto-saved</span>' : ''}
+                <button class="widget-btn widget-minimize" title="Minimize">−</button>
+                <button class="widget-btn widget-close" title="Close">×</button>
+            </div>
+        </div>
+        <div class="widget-content">
+            ${template.content}
+        </div>
+    `;
+
+    dashboard.appendChild(widget);
+
+    // Initialize the new widget
+    const widgetId = newWidgetId;
+    setupWidgetDragging(widget, widgetId);
+    setupWidgetControls(widget, widgetId);
+
+    // Initialize widget-specific functionality
+    if (type === 'notepad') {
+        initNotepadWidget(newWidgetId);
+    }
+
+    // Close the new widget menu
+    document.getElementById('newWidgetMenu').classList.remove('active');
+
+    // Save the widget state
+    saveWidgetState(widgetId, { x: 50, y: 50, closed: false, minimized: false });
+}
+
+function setupWidgetDragging(widget, widgetId) {
+    const header = widget.querySelector('.widget-header');
+    let isDragging = false;
+    let currentX, currentY, initialX, initialY;
+
+    const dragStart = (e) => {
+        if (e.target.closest('button, input, select, textarea')) return;
+
+        if (e.type === 'touchstart') {
+            initialX = e.touches[0].clientX - (parseInt(widget.style.left) || widget.offsetLeft);
+            initialY = e.touches[0].clientY - (parseInt(widget.style.top) || widget.offsetTop);
+        } else {
+            initialX = e.clientX - (parseInt(widget.style.left) || widget.offsetLeft);
+            initialY = e.clientY - (parseInt(widget.style.top) || widget.offsetTop);
+        }
+
+        isDragging = true;
+        widget.classList.add('dragging');
+    };
+
+    const drag = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+
+        if (e.type === 'touchmove') {
+            currentX = e.touches[0].clientX - initialX;
+            currentY = e.touches[0].clientY - initialY;
+        } else {
+            currentX = e.clientX - initialX;
+            currentY = e.clientY - initialY;
+        }
+
+        widget.style.left = currentX + 'px';
+        widget.style.top = currentY + 'px';
+    };
+
+    const dragEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        widget.classList.remove('dragging');
+
+        saveWidgetState(widgetId, {
+            x: parseInt(widget.style.left) || widget.offsetLeft,
+            y: parseInt(widget.style.top) || widget.offsetTop
+        });
+    };
+
+    header.addEventListener('mousedown', dragStart);
+    header.addEventListener('touchstart', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('touchmove', drag);
+    document.addEventListener('mouseup', dragEnd);
+    document.addEventListener('touchend', dragEnd);
+}
+
+function setupWidgetControls(widget, widgetId) {
+    const minimizeBtn = widget.querySelector('.widget-minimize');
+    minimizeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMinimize(widgetId);
+    });
+
+    const closeBtn = widget.querySelector('.widget-close');
+    closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeWidget(widgetId);
+    });
+}
+
+function initNotepadWidget(widgetId) {
+    const notepad = document.getElementById(`notepad-${widgetId}`);
+    const saveStatus = document.getElementById(`saveStatus-${widgetId}`);
+    let saveTimeout;
+
+    // Load saved notes
+    const saved = localStorage.getItem(`notes-${widgetId}`);
+    if (saved) {
+        notepad.innerHTML = saved;
+    }
+
+    // Auto-save on input
+    notepad.addEventListener('input', () => {
+        clearTimeout(saveTimeout);
+        saveStatus.textContent = 'Saving...';
+        saveStatus.style.color = 'var(--warning)';
+
+        saveTimeout = setTimeout(() => {
+            localStorage.setItem(`notes-${widgetId}`, notepad.innerHTML);
+            saveStatus.textContent = 'Auto-saved';
+            saveStatus.style.color = 'var(--success)';
+        }, 1000);
+    });
 }
 
 // ===== PINNED SITES =====
