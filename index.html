@@ -15,89 +15,119 @@
                 <div class="date" id="date"></div>
             </div>
             <div class="greeting" id="greeting"></div>
+            <button class="widget-menu-btn" id="widgetMenuBtn" title="Restore Widgets">⚙️</button>
         </header>
 
-        <!-- Main Dashboard Grid -->
-        <main class="dashboard">
-            <!-- Pinned Websites Section -->
-            <section class="card pinned-sites">
-                <div class="card-header">
-                    <h2>📌 Pinned Sites</h2>
-                    <button class="btn-add" id="addSiteBtn">+</button>
-                </div>
-                <div class="sites-grid" id="sitesGrid"></div>
+        <!-- Widget Menu -->
+        <div class="widget-menu" id="widgetMenu">
+            <div class="widget-menu-content">
+                <h3>Restore Widgets</h3>
+                <div class="widget-menu-list" id="widgetMenuList"></div>
+            </div>
+        </div>
 
-                <!-- Add Site Modal -->
-                <div class="modal" id="siteModal">
-                    <div class="modal-content">
-                        <h3>Add Website</h3>
-                        <input type="text" id="siteName" placeholder="Name" class="input">
-                        <input type="url" id="siteUrl" placeholder="https://example.com" class="input">
-                        <div class="modal-actions">
-                            <button class="btn btn-secondary" id="cancelSite">Cancel</button>
-                            <button class="btn btn-primary" id="saveSite">Save</button>
+        <!-- Main Dashboard - Widgets Container -->
+        <main class="dashboard">
+            <!-- Pinned Websites Widget -->
+            <section class="widget" id="widget-sites" data-widget-id="sites">
+                <div class="widget-header">
+                    <span class="widget-drag-handle">⋮⋮</span>
+                    <h2>📌 Pinned Sites</h2>
+                    <div class="widget-controls">
+                        <button class="btn-add" id="addSiteBtn" title="Add Site">+</button>
+                        <button class="widget-btn widget-minimize" title="Minimize">−</button>
+                        <button class="widget-btn widget-close" title="Close">×</button>
+                    </div>
+                </div>
+                <div class="widget-content">
+                    <div class="sites-grid" id="sitesGrid"></div>
+                </div>
+            </section>
+
+            <!-- Todo List Widget -->
+            <section class="widget" id="widget-todos" data-widget-id="todos">
+                <div class="widget-header">
+                    <span class="widget-drag-handle">⋮⋮</span>
+                    <h2>✓ Todo List</h2>
+                    <div class="widget-controls">
+                        <button class="widget-btn widget-minimize" title="Minimize">−</button>
+                        <button class="widget-btn widget-close" title="Close">×</button>
+                    </div>
+                </div>
+                <div class="widget-content">
+                    <div class="todo-input-container">
+                        <input type="text" id="todoInput" placeholder="Add a new task..." class="input">
+                        <button class="btn btn-primary" id="addTodoBtn">Add</button>
+                    </div>
+                    <ul class="todo-list" id="todoList"></ul>
+                </div>
+            </section>
+
+            <!-- Notepad Widget -->
+            <section class="widget widget-large" id="widget-notepad" data-widget-id="notepad">
+                <div class="widget-header">
+                    <span class="widget-drag-handle">⋮⋮</span>
+                    <h2>📝 Notepad</h2>
+                    <div class="widget-controls">
+                        <span class="auto-save" id="saveStatus">Auto-saved</span>
+                        <button class="widget-btn widget-minimize" title="Minimize">−</button>
+                        <button class="widget-btn widget-close" title="Close">×</button>
+                    </div>
+                </div>
+                <div class="widget-content">
+                    <div class="editor-toolbar">
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" onclick="formatDoc('bold')" title="Bold (Ctrl+B)"><b>B</b></button>
+                            <button class="toolbar-btn" onclick="formatDoc('italic')" title="Italic (Ctrl+I)"><i>I</i></button>
+                            <button class="toolbar-btn" onclick="formatDoc('underline')" title="Underline (Ctrl+U)"><u>U</u></button>
+                            <button class="toolbar-btn" onclick="formatDoc('strikeThrough')" title="Strikethrough"><s>S</s></button>
+                        </div>
+                        <div class="toolbar-group">
+                            <select class="toolbar-select" onchange="formatDoc('fontSize', this.value); this.selectedIndex=0;" title="Font Size">
+                                <option value="" selected disabled>Size</option>
+                                <option value="1">Small</option>
+                                <option value="3">Normal</option>
+                                <option value="5">Large</option>
+                                <option value="7">Extra Large</option>
+                            </select>
+                            <select class="toolbar-select" onchange="formatDoc('formatBlock', this.value); this.selectedIndex=0;" title="Text Style">
+                                <option value="" selected disabled>Style</option>
+                                <option value="p">Paragraph</option>
+                                <option value="h1">Heading 1</option>
+                                <option value="h2">Heading 2</option>
+                                <option value="h3">Heading 3</option>
+                            </select>
+                        </div>
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" onclick="formatDoc('insertUnorderedList')" title="Bullet List">• List</button>
+                            <button class="toolbar-btn" onclick="formatDoc('insertOrderedList')" title="Numbered List">1. List</button>
+                        </div>
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" onclick="formatDoc('justifyLeft')" title="Align Left">⬅</button>
+                            <button class="toolbar-btn" onclick="formatDoc('justifyCenter')" title="Align Center">↔</button>
+                            <button class="toolbar-btn" onclick="formatDoc('justifyRight')" title="Align Right">➡</button>
+                        </div>
+                        <div class="toolbar-group">
+                            <button class="toolbar-btn" onclick="formatDoc('removeFormat')" title="Clear Formatting">Clear</button>
                         </div>
                     </div>
+                    <div id="notepad" class="notepad" contenteditable="true" data-placeholder="Start typing your notes here..."></div>
                 </div>
-            </section>
-
-            <!-- Todo List Section -->
-            <section class="card todo-section">
-                <div class="card-header">
-                    <h2>✓ Todo List</h2>
-                </div>
-                <div class="todo-input-container">
-                    <input type="text" id="todoInput" placeholder="Add a new task..." class="input">
-                    <button class="btn btn-primary" id="addTodoBtn">Add</button>
-                </div>
-                <ul class="todo-list" id="todoList"></ul>
-            </section>
-
-            <!-- Notepad Section -->
-            <section class="card notepad-section">
-                <div class="card-header">
-                    <h2>📝 Notepad</h2>
-                    <span class="auto-save" id="saveStatus">Auto-saved</span>
-                </div>
-                <div class="editor-toolbar">
-                    <div class="toolbar-group">
-                        <button class="toolbar-btn" onclick="formatDoc('bold')" title="Bold (Ctrl+B)"><b>B</b></button>
-                        <button class="toolbar-btn" onclick="formatDoc('italic')" title="Italic (Ctrl+I)"><i>I</i></button>
-                        <button class="toolbar-btn" onclick="formatDoc('underline')" title="Underline (Ctrl+U)"><u>U</u></button>
-                        <button class="toolbar-btn" onclick="formatDoc('strikeThrough')" title="Strikethrough"><s>S</s></button>
-                    </div>
-                    <div class="toolbar-group">
-                        <select class="toolbar-select" onchange="formatDoc('fontSize', this.value); this.selectedIndex=0;" title="Font Size">
-                            <option value="" selected disabled>Size</option>
-                            <option value="1">Small</option>
-                            <option value="3">Normal</option>
-                            <option value="5">Large</option>
-                            <option value="7">Extra Large</option>
-                        </select>
-                        <select class="toolbar-select" onchange="formatDoc('formatBlock', this.value); this.selectedIndex=0;" title="Text Style">
-                            <option value="" selected disabled>Style</option>
-                            <option value="p">Paragraph</option>
-                            <option value="h1">Heading 1</option>
-                            <option value="h2">Heading 2</option>
-                            <option value="h3">Heading 3</option>
-                        </select>
-                    </div>
-                    <div class="toolbar-group">
-                        <button class="toolbar-btn" onclick="formatDoc('insertUnorderedList')" title="Bullet List">• List</button>
-                        <button class="toolbar-btn" onclick="formatDoc('insertOrderedList')" title="Numbered List">1. List</button>
-                    </div>
-                    <div class="toolbar-group">
-                        <button class="toolbar-btn" onclick="formatDoc('justifyLeft')" title="Align Left">⬅</button>
-                        <button class="toolbar-btn" onclick="formatDoc('justifyCenter')" title="Align Center">↔</button>
-                        <button class="toolbar-btn" onclick="formatDoc('justifyRight')" title="Align Right">➡</button>
-                    </div>
-                    <div class="toolbar-group">
-                        <button class="toolbar-btn" onclick="formatDoc('removeFormat')" title="Clear Formatting">Clear</button>
-                    </div>
-                </div>
-                <div id="notepad" class="notepad" contenteditable="true" data-placeholder="Start typing your notes here..."></div>
             </section>
         </main>
+
+        <!-- Add Site Modal -->
+        <div class="modal" id="siteModal">
+            <div class="modal-content">
+                <h3>Add Website</h3>
+                <input type="text" id="siteName" placeholder="Name" class="input">
+                <input type="url" id="siteUrl" placeholder="https://example.com" class="input">
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" id="cancelSite">Cancel</button>
+                    <button class="btn btn-primary" id="saveSite">Save</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>

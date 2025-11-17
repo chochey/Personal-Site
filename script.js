@@ -2,13 +2,18 @@
 const STORAGE_KEYS = {
     SITES: 'pinnedSites',
     TODOS: 'todos',
-    NOTES: 'notes'
+    NOTES: 'notes',
+    WIDGETS: 'widgetStates'
 };
+
+// Widget state
+let widgetStates = {};
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     initTime();
     initGreeting();
+    initWidgets();
     initPinnedSites();
     initTodos();
     initNotepad();
@@ -56,6 +61,182 @@ function initGreeting() {
     }
 
     document.getElementById('greeting').textContent = greeting;
+}
+
+// ===== WIDGET MANAGEMENT =====
+function initWidgets() {
+    loadWidgetStates();
+
+    const widgets = document.querySelectorAll('.widget');
+
+    widgets.forEach(widget => {
+        const widgetId = widget.dataset.widgetId;
+        const state = widgetStates[widgetId] || {};
+
+        // Apply saved position
+        if (state.x && state.y) {
+            widget.style.left = state.x + 'px';
+            widget.style.top = state.y + 'px';
+        }
+
+        // Apply saved state (minimized/closed)
+        if (state.minimized) {
+            widget.classList.add('minimized');
+        }
+        if (state.closed) {
+            widget.classList.add('closed');
+        }
+
+        // Setup drag handlers
+        const handle = widget.querySelector('.widget-drag-handle');
+        const header = widget.querySelector('.widget-header');
+
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+
+        const dragStart = (e) => {
+            // Don't drag if clicking on buttons or inputs
+            if (e.target.closest('button, input, select, textarea')) return;
+
+            if (e.type === 'touchstart') {
+                initialX = e.touches[0].clientX - (parseInt(widget.style.left) || widget.offsetLeft);
+                initialY = e.touches[0].clientY - (parseInt(widget.style.top) || widget.offsetTop);
+            } else {
+                initialX = e.clientX - (parseInt(widget.style.left) || widget.offsetLeft);
+                initialY = e.clientY - (parseInt(widget.style.top) || widget.offsetTop);
+            }
+
+            isDragging = true;
+            widget.classList.add('dragging');
+        };
+
+        const drag = (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+
+            if (e.type === 'touchmove') {
+                currentX = e.touches[0].clientX - initialX;
+                currentY = e.touches[0].clientY - initialY;
+            } else {
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+            }
+
+            widget.style.left = currentX + 'px';
+            widget.style.top = currentY + 'px';
+        };
+
+        const dragEnd = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            widget.classList.remove('dragging');
+
+            // Save position
+            saveWidgetState(widgetId, {
+                x: parseInt(widget.style.left) || widget.offsetLeft,
+                y: parseInt(widget.style.top) || widget.offsetTop
+            });
+        };
+
+        header.addEventListener('mousedown', dragStart);
+        header.addEventListener('touchstart', dragStart);
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('touchmove', drag);
+        document.addEventListener('mouseup', dragEnd);
+        document.addEventListener('touchend', dragEnd);
+
+        // Setup minimize button
+        const minimizeBtn = widget.querySelector('.widget-minimize');
+        minimizeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleMinimize(widgetId);
+        });
+
+        // Setup close button
+        const closeBtn = widget.querySelector('.widget-close');
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeWidget(widgetId);
+        });
+    });
+
+    // Setup widget menu
+    const menuBtn = document.getElementById('widgetMenuBtn');
+    const menu = document.getElementById('widgetMenu');
+
+    menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        menu.classList.toggle('active');
+        updateWidgetMenu();
+    });
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!menu.contains(e.target) && e.target !== menuBtn) {
+            menu.classList.remove('active');
+        }
+    });
+
+    updateWidgetMenu();
+}
+
+function loadWidgetStates() {
+    const saved = localStorage.getItem(STORAGE_KEYS.WIDGETS);
+    widgetStates = saved ? JSON.parse(saved) : {};
+}
+
+function saveWidgetState(widgetId, updates) {
+    widgetStates[widgetId] = { ...widgetStates[widgetId], ...updates };
+    localStorage.setItem(STORAGE_KEYS.WIDGETS, JSON.stringify(widgetStates));
+}
+
+function toggleMinimize(widgetId) {
+    const widget = document.getElementById(`widget-${widgetId}`);
+    const isMinimized = widget.classList.toggle('minimized');
+
+    saveWidgetState(widgetId, { minimized: isMinimized });
+}
+
+function closeWidget(widgetId) {
+    const widget = document.getElementById(`widget-${widgetId}`);
+    widget.classList.add('closed');
+
+    saveWidgetState(widgetId, { closed: true });
+    updateWidgetMenu();
+}
+
+function restoreWidget(widgetId) {
+    const widget = document.getElementById(`widget-${widgetId}`);
+    widget.classList.remove('closed');
+    widget.classList.remove('minimized');
+
+    saveWidgetState(widgetId, { closed: false, minimized: false });
+    updateWidgetMenu();
+}
+
+function updateWidgetMenu() {
+    const menuList = document.getElementById('widgetMenuList');
+    const closedWidgets = Object.entries(widgetStates).filter(([id, state]) => state.closed);
+
+    if (closedWidgets.length === 0) {
+        menuList.innerHTML = '<p class="no-widgets">All widgets are visible</p>';
+        return;
+    }
+
+    const widgetNames = {
+        'sites': '📌 Pinned Sites',
+        'todos': '✓ Todo List',
+        'notepad': '📝 Notepad'
+    };
+
+    menuList.innerHTML = closedWidgets.map(([id]) => `
+        <button class="widget-restore-btn" onclick="restoreWidget('${id}')">
+            ${widgetNames[id] || id}
+        </button>
+    `).join('');
 }
 
 // ===== PINNED SITES =====
