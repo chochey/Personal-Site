@@ -1831,7 +1831,6 @@ function addHabit(widgetId) {
     saveHabits(widgetId);
     renderHabits(widgetId);
     input.value = '';
-    playSound('click');
 }
 
 function toggleHabitDay(widgetId, habitIndex) {
@@ -1849,7 +1848,6 @@ function toggleHabitDay(widgetId, habitIndex) {
 
     saveHabits(widgetId);
     renderHabits(widgetId);
-    playSound('complete');
 }
 
 function calculateStreak(history) {
@@ -1874,7 +1872,6 @@ function deleteHabit(widgetId, habitIndex) {
         habitsData[widgetId].splice(habitIndex, 1);
         saveHabits(widgetId);
         renderHabits(widgetId);
-        playSound('click');
     }
 }
 
@@ -1967,7 +1964,7 @@ function saveStickyNoteData(widgetId, title, content) {
 }
 
 function changeStickyNoteColorSingle(widgetId, widget) {
-    const colors = ['yellow', 'blue', 'green', 'pink', 'purple', 'orange'];
+    const colors = ['yellow', 'blue', 'green', 'pink', 'purple', 'orange', 'dark-blue', 'dark-green', 'dark-purple', 'dark-gray'];
     const state = widgetStates[widgetId];
     const currentColor = state?.stickyNoteData?.color || 'yellow';
     const currentIndex = colors.indexOf(currentColor);
@@ -1986,7 +1983,6 @@ function changeStickyNoteColorSingle(widgetId, widget) {
     }
 
     saveWidgetState(widgetId, state);
-    playSound('click');
 }
 
 // ===== BACKGROUND GRADIENTS =====
@@ -2029,7 +2025,6 @@ function saveWidgetLayout() {
 
     localStorage.setItem(STORAGE_KEYS.LAYOUTS, JSON.stringify(layouts));
     alert(`Layout "${layoutName}" saved!`);
-    playSound('complete');
 }
 
 function loadWidgetLayout() {

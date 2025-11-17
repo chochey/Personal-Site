@@ -1858,6 +1858,23 @@ select {
     background: linear-gradient(135deg, #ffd4b3 0%, #ffb380 100%) !important;
 }
 
+.widget-stickynote-dark-blue {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%) !important;
+}
+
+.widget-stickynote-dark-green {
+    background: linear-gradient(135deg, #1e3a2e 0%, #2d5a3f 100%) !important;
+}
+
+.widget-stickynote-dark-purple {
+    background: linear-gradient(135deg, #4a2c4a 0%, #6a3e6a 100%) !important;
+}
+
+.widget-stickynote-dark-gray {
+    background: linear-gradient(135deg, #3a3a3a 0%, #505050 100%) !important;
+}
+
+/* Light sticky note styling */
 .widget-stickynote .widget-header {
     background: transparent;
     border-bottom: 1px solid rgba(0, 0, 0, 0.1);
@@ -1881,6 +1898,45 @@ select {
 
 .widget-stickynote .widget-drag-handle {
     color: rgba(0, 0, 0, 0.4);
+}
+
+/* Dark sticky note styling overrides */
+.widget-stickynote-dark-blue .widget-header,
+.widget-stickynote-dark-green .widget-header,
+.widget-stickynote-dark-purple .widget-header,
+.widget-stickynote-dark-gray .widget-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.widget-stickynote-dark-blue .widget-header h2,
+.widget-stickynote-dark-green .widget-header h2,
+.widget-stickynote-dark-purple .widget-header h2,
+.widget-stickynote-dark-gray .widget-header h2 {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.widget-stickynote-dark-blue .widget-btn,
+.widget-stickynote-dark-green .widget-btn,
+.widget-stickynote-dark-purple .widget-btn,
+.widget-stickynote-dark-gray .widget-btn {
+    background: rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.widget-stickynote-dark-blue .widget-btn:hover,
+.widget-stickynote-dark-green .widget-btn:hover,
+.widget-stickynote-dark-purple .widget-btn:hover,
+.widget-stickynote-dark-gray .widget-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 1);
+}
+
+.widget-stickynote-dark-blue .widget-drag-handle,
+.widget-stickynote-dark-green .widget-drag-handle,
+.widget-stickynote-dark-purple .widget-drag-handle,
+.widget-stickynote-dark-gray .widget-drag-handle {
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .stickynote-single {
@@ -1929,6 +1985,38 @@ select {
 
 .stickynote-content::placeholder {
     color: rgba(0, 0, 0, 0.4);
+}
+
+/* Dark sticky note input styling */
+.widget-stickynote-dark-blue .stickynote-title,
+.widget-stickynote-dark-green .stickynote-title,
+.widget-stickynote-dark-purple .stickynote-title,
+.widget-stickynote-dark-gray .stickynote-title {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.widget-stickynote-dark-blue .stickynote-title:focus,
+.widget-stickynote-dark-green .stickynote-title:focus,
+.widget-stickynote-dark-purple .stickynote-title:focus,
+.widget-stickynote-dark-gray .stickynote-title:focus {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.widget-stickynote-dark-blue .stickynote-content,
+.widget-stickynote-dark-green .stickynote-content,
+.widget-stickynote-dark-purple .stickynote-content,
+.widget-stickynote-dark-gray .stickynote-content {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.widget-stickynote-dark-blue .stickynote-content::placeholder,
+.widget-stickynote-dark-green .stickynote-content::placeholder,
+.widget-stickynote-dark-purple .stickynote-content::placeholder,
+.widget-stickynote-dark-gray .stickynote-content::placeholder {
+    color: rgba(255, 255, 255, 0.4);
 }
 
 /* ===== ANIMATIONS & MICRO-INTERACTIONS ===== */
