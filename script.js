@@ -77,8 +77,158 @@ function initGreeting() {
 }
 
 // ===== WIDGET MANAGEMENT =====
+function recreateWidget(widgetId, state) {
+    // Determine widget type from widgetId (e.g., "pomodoro-1" -> "pomodoro")
+    const type = widgetId.split('-')[0];
+
+    // Skip if this is a default widget (sites, todos, notepad)
+    if (type === 'sites' || type === 'todos' || type === 'notepad') {
+        return;
+    }
+
+    const dashboard = document.querySelector('.dashboard');
+    const widgetTemplates = {
+        'weather': {
+            icon: '🌤️',
+            title: 'Weather',
+            content: `
+                <div id="weather-${widgetId}" class="weather-container">
+                    <div class="weather-setup">
+                        <p>Enter your city to get weather:</p>
+                        <input type="text" id="weatherCity-${widgetId}" placeholder="City name" class="input">
+                        <button class="btn btn-primary" onclick="fetchWeatherForWidget('${widgetId}')">Get Weather</button>
+                    </div>
+                </div>
+            `,
+            hasAddBtn: false
+        },
+        'pomodoro': {
+            icon: '⏱️',
+            title: 'Pomodoro Timer',
+            content: `
+                <div id="pomodoro-${widgetId}" class="pomodoro-container">
+                    <div class="pomodoro-display">
+                        <div class="pomodoro-time" id="pomodoroTime-${widgetId}">25:00</div>
+                        <div class="pomodoro-label" id="pomodoroLabel-${widgetId}">Focus Time</div>
+                    </div>
+                    <div class="pomodoro-progress">
+                        <svg class="pomodoro-ring" width="200" height="200">
+                            <circle class="pomodoro-ring-bg" cx="100" cy="100" r="90"></circle>
+                            <circle class="pomodoro-ring-progress" id="pomodoroRing-${widgetId}" cx="100" cy="100" r="90"></circle>
+                        </svg>
+                    </div>
+                    <div class="pomodoro-controls">
+                        <button class="btn btn-primary" id="pomodoroStart-${widgetId}">Start</button>
+                        <button class="btn btn-secondary" id="pomodoroReset-${widgetId}">Reset</button>
+                    </div>
+                    <div class="pomodoro-settings">
+                        <label>Focus: <input type="number" id="pomodoroFocus-${widgetId}" value="25" min="1" max="60" class="pomodoro-input"> min</label>
+                        <label>Break: <input type="number" id="pomodoroBreak-${widgetId}" value="5" min="1" max="30" class="pomodoro-input"> min</label>
+                    </div>
+                </div>
+            `,
+            hasAddBtn: false
+        },
+        'habits': {
+            icon: '✨',
+            title: 'Habits Tracker',
+            content: `
+                <div id="habits-${widgetId}" class="habits-container">
+                    <div class="habits-input-container">
+                        <input type="text" id="habitInput-${widgetId}" placeholder="Add a new habit..." class="input">
+                        <button class="btn btn-primary" onclick="addHabit('${widgetId}')">Add</button>
+                    </div>
+                    <div class="habits-list" id="habitsList-${widgetId}"></div>
+                </div>
+            `,
+            hasAddBtn: false
+        },
+        'stickynotes': {
+            icon: '📋',
+            title: 'Note',
+            content: `
+                <div class="stickynote-single" id="stickynote-${widgetId}">
+                    <textarea
+                        class="stickynote-content"
+                        id="stickynoteContent-${widgetId}"
+                        placeholder="Type your note here..."
+                    ></textarea>
+                </div>
+            `,
+            hasAddBtn: false,
+            isStickyNote: true
+        }
+    };
+
+    const template = widgetTemplates[type];
+    if (!template) return;
+
+    const widget = document.createElement('section');
+    widget.className = 'widget';
+    widget.id = `widget-${widgetId}`;
+    widget.dataset.widgetId = widgetId;
+    widget.style.left = (state.x || 50) + 'px';
+    widget.style.top = (state.y || 50) + 'px';
+
+    if (state.width) widget.style.width = state.width + 'px';
+    if (state.height) widget.style.height = state.height + 'px';
+
+    widget.innerHTML = `
+        <div class="widget-header">
+            <span class="widget-drag-handle">⋮⋮</span>
+            <h2>${template.icon} ${state.customName || template.title}</h2>
+            <div class="widget-controls">
+                ${template.hasAddBtn ? '<button class="btn-add" id="addBtn-' + widgetId + '" title="Add">+</button>' : ''}
+                ${template.hasSaveStatus ? '<span class="auto-save" id="saveStatus-' + widgetId + '">Auto-saved</span>' : ''}
+                ${template.isStickyNote ? '<button class="widget-btn" id="colorBtn-' + widgetId + '" title="Change color">🎨</button>' : ''}
+                <button class="widget-btn widget-minimize" title="Minimize">−</button>
+                <button class="widget-btn widget-close" title="Close">×</button>
+            </div>
+        </div>
+        <div class="widget-content">
+            ${template.content}
+        </div>
+        <div class="widget-resize-handle"></div>
+    `;
+
+    // Apply sticky note styling
+    if (template.isStickyNote) {
+        const color = state.stickyNoteData?.color || 'yellow';
+        widget.classList.add('widget-stickynote', `widget-stickynote-${color}`);
+    }
+
+    // Apply state classes
+    if (state.minimized) widget.classList.add('minimized');
+    if (state.closed) widget.classList.add('closed');
+
+    dashboard.appendChild(widget);
+
+    // Setup widget functionality
+    setupWidgetDragging(widget, widgetId);
+    setupWidgetControls(widget, widgetId);
+    setupWidgetResize(widget, widgetId);
+
+    // Initialize widget-specific functionality
+    if (type === 'pomodoro') {
+        initPomodoroWidget(widgetId);
+    } else if (type === 'habits') {
+        initHabitsWidget(widgetId);
+    } else if (type === 'stickynotes') {
+        initSingleStickyNote(widgetId, widget);
+    }
+}
+
 function initWidgets() {
     loadWidgetStates();
+
+    // Recreate dynamically created widgets from storage
+    Object.keys(widgetStates).forEach(widgetId => {
+        // Check if widget exists in DOM
+        if (!document.getElementById(`widget-${widgetId}`)) {
+            // Recreate the widget
+            recreateWidget(widgetId, widgetStates[widgetId]);
+        }
+    });
 
     const widgets = document.querySelectorAll('.widget');
 
@@ -433,13 +583,6 @@ function createNewWidget(type) {
             title: 'Note',
             content: `
                 <div class="stickynote-single" id="stickynote-${newWidgetId}">
-                    <input
-                        type="text"
-                        class="stickynote-title"
-                        id="stickynoteTitle-${newWidgetId}"
-                        placeholder="Note title..."
-                        value="New Note"
-                    />
                     <textarea
                         class="stickynote-content"
                         id="stickynoteContent-${newWidgetId}"
@@ -510,7 +653,7 @@ function createNewWidget(type) {
     // Save the widget state
     const initialState = { x: 50, y: 50, closed: false, minimized: false };
     if (type === 'stickynotes') {
-        initialState.stickyNoteData = { title: 'New Note', content: '', color: 'yellow' };
+        initialState.stickyNoteData = { content: '', color: 'yellow' };
     }
     saveWidgetState(widgetId, initialState);
     updateWidgetBar();
@@ -1912,33 +2055,24 @@ function saveHabits(widgetId) {
 // ===== SINGLE STICKY NOTE WIDGET =====
 function initSingleStickyNote(widgetId, widget) {
     const state = widgetStates[widgetId];
-    const noteData = state?.stickyNoteData || { title: 'New Note', content: '', color: 'yellow' };
+    const noteData = state?.stickyNoteData || { content: '', color: 'yellow' };
 
     // Apply saved color
     widget.className = widget.className.replace(/widget-stickynote-\w+/, '');
     widget.classList.add(`widget-stickynote-${noteData.color}`);
 
     // Set saved values
-    const titleInput = document.getElementById(`stickynoteTitle-${widgetId}`);
     const contentInput = document.getElementById(`stickynoteContent-${widgetId}`);
 
-    if (titleInput) titleInput.value = noteData.title;
-    if (contentInput) contentInput.value = noteData.content;
-
-    // Setup title input
-    if (titleInput) {
-        titleInput.addEventListener('input', () => {
-            saveStickyNoteData(widgetId, titleInput.value, contentInput.value);
-        });
-        // Select title on creation
-        setTimeout(() => titleInput.select(), 100);
-    }
+    if (contentInput) contentInput.value = noteData.content || '';
 
     // Setup content textarea
     if (contentInput) {
         contentInput.addEventListener('input', () => {
-            saveStickyNoteData(widgetId, titleInput.value, contentInput.value);
+            saveStickyNoteData(widgetId, contentInput.value);
         });
+        // Focus on creation
+        setTimeout(() => contentInput.focus(), 100);
     }
 
     // Setup color button
@@ -1951,12 +2085,11 @@ function initSingleStickyNote(widgetId, widget) {
     }
 }
 
-function saveStickyNoteData(widgetId, title, content) {
+function saveStickyNoteData(widgetId, content) {
     const state = widgetStates[widgetId] || {};
     const currentColor = state.stickyNoteData?.color || 'yellow';
 
     state.stickyNoteData = {
-        title: title,
         content: content,
         color: currentColor
     };
@@ -2030,7 +2163,7 @@ function selectStickyNoteColor(widgetId, widget, color) {
     if (state.stickyNoteData) {
         state.stickyNoteData.color = color;
     } else {
-        state.stickyNoteData = { title: 'New Note', content: '', color: color };
+        state.stickyNoteData = { content: '', color: color };
     }
 
     saveWidgetState(widgetId, state);

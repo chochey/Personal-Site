@@ -1943,40 +1943,20 @@ select {
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 10px;
-}
-
-.stickynote-title {
-    width: 100%;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 6px;
-    padding: 8px 12px;
-    font-family: 'Comic Sans MS', cursive, sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    color: rgba(0, 0, 0, 0.85);
-    outline: none;
-    margin-bottom: 10px;
-}
-
-.stickynote-title:focus {
-    background: rgba(255, 255, 255, 0.75);
-    border-color: rgba(0, 0, 0, 0.25);
+    padding: 15px;
 }
 
 .stickynote-content {
     width: 100%;
-    flex: 1;
-    min-height: 100px;
+    height: 100%;
     background: transparent;
     border: none;
     outline: none;
     resize: none;
     font-family: 'Comic Sans MS', cursive, sans-serif;
-    font-size: 0.95rem;
+    font-size: 1rem;
     line-height: 1.6;
-    color: rgba(0, 0, 0, 0.8);
+    color: rgba(0, 0, 0, 0.85);
 }
 
 .stickynote-content:focus {
@@ -1987,36 +1967,19 @@ select {
     color: rgba(0, 0, 0, 0.4);
 }
 
-/* Dark sticky note input styling */
-.widget-stickynote-dark-blue .stickynote-title,
-.widget-stickynote-dark-green .stickynote-title,
-.widget-stickynote-dark-purple .stickynote-title,
-.widget-stickynote-dark-gray .stickynote-title {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.95);
-}
-
-.widget-stickynote-dark-blue .stickynote-title:focus,
-.widget-stickynote-dark-green .stickynote-title:focus,
-.widget-stickynote-dark-purple .stickynote-title:focus,
-.widget-stickynote-dark-gray .stickynote-title:focus {
-    background: rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
+/* Dark sticky note content styling */
 .widget-stickynote-dark-blue .stickynote-content,
 .widget-stickynote-dark-green .stickynote-content,
 .widget-stickynote-dark-purple .stickynote-content,
 .widget-stickynote-dark-gray .stickynote-content {
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255, 0.95);
 }
 
 .widget-stickynote-dark-blue .stickynote-content::placeholder,
 .widget-stickynote-dark-green .stickynote-content::placeholder,
 .widget-stickynote-dark-purple .stickynote-content::placeholder,
 .widget-stickynote-dark-gray .stickynote-content::placeholder {
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 /* ===== COLOR PICKER MENU ===== */
