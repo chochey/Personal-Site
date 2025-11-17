@@ -1580,9 +1580,16 @@ body {
 
 button,
 input,
-select,
-.widget {
+select {
     transition: all 0.2s ease;
+}
+
+.widget {
+    transition: box-shadow 0.2s ease;
+}
+
+.widget.dragging {
+    transition: none !important;
 }
 
 /* ===== HOVER IMPROVEMENTS ===== */
