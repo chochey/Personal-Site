@@ -5,7 +5,11 @@ const STORAGE_KEYS = {
     NOTES: 'notes',
     WIDGETS: 'widgetStates',
     SETTINGS: 'userSettings',
-    WEATHER: 'weatherData'
+    WEATHER: 'weatherData',
+    HABITS: 'habits',
+    STICKY_NOTES: 'stickyNotes',
+    LAYOUTS: 'widgetLayouts',
+    POMODORO: 'pomodoroSettings'
 };
 
 // Widget state
@@ -382,6 +386,63 @@ function createNewWidget(type) {
                 </div>
             `,
             hasAddBtn: false
+        },
+        'pomodoro': {
+            icon: '⏱️',
+            title: 'Pomodoro Timer',
+            content: `
+                <div id="pomodoro-${newWidgetId}" class="pomodoro-container">
+                    <div class="pomodoro-display">
+                        <div class="pomodoro-time" id="pomodoroTime-${newWidgetId}">25:00</div>
+                        <div class="pomodoro-label" id="pomodoroLabel-${newWidgetId}">Focus Time</div>
+                    </div>
+                    <div class="pomodoro-progress">
+                        <svg class="pomodoro-ring" width="200" height="200">
+                            <circle class="pomodoro-ring-bg" cx="100" cy="100" r="90"></circle>
+                            <circle class="pomodoro-ring-progress" id="pomodoroRing-${newWidgetId}" cx="100" cy="100" r="90"></circle>
+                        </svg>
+                    </div>
+                    <div class="pomodoro-controls">
+                        <button class="btn btn-primary" id="pomodoroStart-${newWidgetId}">Start</button>
+                        <button class="btn btn-secondary" id="pomodoroReset-${newWidgetId}">Reset</button>
+                    </div>
+                    <div class="pomodoro-settings">
+                        <label>Focus: <input type="number" id="pomodoroFocus-${newWidgetId}" value="25" min="1" max="60" class="pomodoro-input"> min</label>
+                        <label>Break: <input type="number" id="pomodoroBreak-${newWidgetId}" value="5" min="1" max="30" class="pomodoro-input"> min</label>
+                    </div>
+                </div>
+            `,
+            hasAddBtn: false
+        },
+        'habits': {
+            icon: '✨',
+            title: 'Habits Tracker',
+            content: `
+                <div id="habits-${newWidgetId}" class="habits-container">
+                    <div class="habits-input-container">
+                        <input type="text" id="habitInput-${newWidgetId}" placeholder="Add a new habit..." class="input">
+                        <button class="btn btn-primary" onclick="addHabit('${newWidgetId}')">Add</button>
+                    </div>
+                    <div class="habits-list" id="habitsList-${newWidgetId}"></div>
+                </div>
+            `,
+            hasAddBtn: false
+        },
+        'stickynotes': {
+            icon: '📋',
+            title: 'Sticky Notes',
+            content: `
+                <div id="stickynotes-${newWidgetId}" class="stickynotes-container">
+                    <div class="stickynotes-controls">
+                        <button class="btn btn-primary btn-sm" onclick="addStickyNote('${newWidgetId}', 'yellow')">+ Yellow</button>
+                        <button class="btn btn-primary btn-sm" onclick="addStickyNote('${newWidgetId}', 'blue')">+ Blue</button>
+                        <button class="btn btn-primary btn-sm" onclick="addStickyNote('${newWidgetId}', 'green')">+ Green</button>
+                        <button class="btn btn-primary btn-sm" onclick="addStickyNote('${newWidgetId}', 'pink')">+ Pink</button>
+                    </div>
+                    <div class="stickynotes-grid" id="stickynotesGrid-${newWidgetId}"></div>
+                </div>
+            `,
+            hasAddBtn: false
         }
     };
 
@@ -423,6 +484,12 @@ function createNewWidget(type) {
     // Initialize widget-specific functionality
     if (type === 'notepad') {
         initNotepadWidget(newWidgetId);
+    } else if (type === 'pomodoro') {
+        initPomodoroWidget(newWidgetId);
+    } else if (type === 'habits') {
+        initHabitsWidget(newWidgetId);
+    } else if (type === 'stickynotes') {
+        initStickyNotesWidget(newWidgetId);
     }
 
     // Close the new widget menu
@@ -430,6 +497,7 @@ function createNewWidget(type) {
 
     // Save the widget state
     saveWidgetState(widgetId, { x: 50, y: 50, closed: false, minimized: false });
+    updateWidgetBar();
 }
 
 function setupWidgetDragging(widget, widgetId) {
@@ -856,11 +924,23 @@ function renderTodos() {
             ? `<span class="todo-priority priority-${todo.priority}">${todo.priority}</span>`
             : '';
 
+        const dueDateBadge = todo.dueDate
+            ? `<span class="todo-due-date" title="Due date">${formatDueDate(todo.dueDate)}</span>`
+            : '';
+
+        const tagsBadges = todo.tags && todo.tags.length > 0
+            ? todo.tags.map(tag => `<span class="todo-tag">${escapeHtml(tag)}</span>`).join('')
+            : '';
+
         li.innerHTML = `
             <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''}
                    onchange="toggleTodo(${index})">
             ${priorityBadge}
             <span class="todo-text">${escapeHtml(todo.text)}</span>
+            <div class="todo-meta">
+                ${dueDateBadge}
+                ${tagsBadges}
+            </div>
             <button class="todo-delete" onclick="deleteTodo(${index})">×</button>
         `;
 
@@ -935,6 +1015,9 @@ function addTodo() {
     const input = document.getElementById('todoInput');
     const text = input.value.trim();
     const priority = document.getElementById('todoPriority').value;
+    const dueDate = document.getElementById('todoDueDate').value;
+    const tagsInput = document.getElementById('todoTags').value.trim();
+    const tags = tagsInput ? tagsInput.split(',').map(t => t.trim()).filter(t => t) : [];
 
     if (!text) return;
 
@@ -942,12 +1025,16 @@ function addTodo() {
         text,
         completed: false,
         priority: priority,
+        dueDate: dueDate || null,
+        tags: tags,
         createdAt: Date.now()
     });
     saveTodosToStorage();
     renderTodos();
     input.value = '';
     document.getElementById('todoPriority').value = 'none';
+    document.getElementById('todoDueDate').value = '';
+    document.getElementById('todoTags').value = '';
     input.focus();
 }
 
@@ -1218,7 +1305,9 @@ function initKeyboardShortcuts() {
 let userSettings = {
     darkMode: true,
     accentColor: '#4a9eff',
-    gridSnap: false
+    gridSnap: false,
+    soundEffects: true,
+    backgroundStyle: 'default'
 };
 
 function initSettings() {
@@ -1242,6 +1331,11 @@ function applySettings() {
     // Apply accent color
     document.documentElement.style.setProperty('--accent-primary', userSettings.accentColor);
     document.documentElement.style.setProperty('--accent-hover', adjustColorBrightness(userSettings.accentColor, -20));
+
+    // Apply background gradient
+    if (userSettings.backgroundStyle) {
+        applyBackgroundGradient(userSettings.backgroundStyle);
+    }
 }
 
 function adjustColorBrightness(color, percent) {
@@ -1315,6 +1409,27 @@ function initHeaderControls() {
         applySettings();
         saveSettings();
     });
+
+    // Background style selector
+    const backgroundStyle = document.getElementById('backgroundStyle');
+    backgroundStyle.value = userSettings.backgroundStyle || 'default';
+    backgroundStyle.addEventListener('change', (e) => {
+        userSettings.backgroundStyle = e.target.value;
+        applySettings();
+        saveSettings();
+    });
+
+    // Sound effects toggle
+    const soundEffects = document.getElementById('soundEffects');
+    soundEffects.checked = userSettings.soundEffects !== false;
+    soundEffects.addEventListener('change', (e) => {
+        userSettings.soundEffects = e.target.checked;
+        saveSettings();
+    });
+
+    // Widget layout buttons
+    document.getElementById('saveLayoutBtn').addEventListener('click', saveWidgetLayout);
+    document.getElementById('loadLayoutBtn').addEventListener('click', loadWidgetLayout);
 
     // Export button
     document.getElementById('exportBtn').addEventListener('click', exportData);
@@ -1485,5 +1600,436 @@ function openSiteModal(index = null) {
     setTimeout(() => {
         document.getElementById('siteName').focus();
     }, 100);
+}
+
+// ===== UTILITY FUNCTIONS FOR NEW FEATURES =====
+
+// Format due date for display
+function formatDueDate(dateString) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Check if overdue
+    if (date < today && date.toDateString() !== today.toDateString()) {
+        return '🔴 ' + date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    if (date.toDateString() === today.toDateString()) {
+        return '⚠️ Today';
+    }
+    if (date.toDateString() === tomorrow.toDateString()) {
+        return '🟡 Tomorrow';
+    }
+    return '📅 ' + date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// Sound effect player
+function playSound(type) {
+    const soundSettings = userSettings.soundEffects !== false;
+    if (!soundSettings) return;
+
+    // Create audio context for simple beep sounds
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        switch(type) {
+            case 'click':
+                oscillator.frequency.value = 800;
+                gainNode.gain.value = 0.1;
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.05);
+                break;
+            case 'complete':
+                oscillator.frequency.value = 1000;
+                gainNode.gain.value = 0.15;
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.1);
+                break;
+            case 'alert':
+                oscillator.frequency.value = 600;
+                gainNode.gain.value = 0.2;
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.2);
+                break;
+        }
+    } catch (e) {
+        // Silently fail if audio context not supported
+    }
+}
+
+// ===== POMODORO WIDGET =====
+const pomodoroTimers = {};
+
+function initPomodoroWidget(widgetId) {
+    const timerState = {
+        minutes: 25,
+        seconds: 0,
+        isRunning: false,
+        isBreak: false,
+        intervalId: null,
+        focusTime: 25,
+        breakTime: 5
+    };
+
+    pomodoroTimers[widgetId] = timerState;
+
+    const startBtn = document.getElementById(`pomodoroStart-${widgetId}`);
+    const resetBtn = document.getElementById(`pomodoroReset-${widgetId}`);
+    const focusInput = document.getElementById(`pomodoroFocus-${widgetId}`);
+    const breakInput = document.getElementById(`pomodoroBreak-${widgetId}`);
+
+    startBtn.addEventListener('click', () => togglePomodoro(widgetId));
+    resetBtn.addEventListener('click', () => resetPomodoro(widgetId));
+
+    focusInput.addEventListener('change', () => {
+        timerState.focusTime = parseInt(focusInput.value);
+        if (!timerState.isRunning && !timerState.isBreak) {
+            timerState.minutes = timerState.focusTime;
+            timerState.seconds = 0;
+            updatePomodoroDisplay(widgetId);
+        }
+    });
+
+    breakInput.addEventListener('change', () => {
+        timerState.breakTime = parseInt(breakInput.value);
+    });
+
+    updatePomodoroDisplay(widgetId);
+}
+
+function togglePomodoro(widgetId) {
+    const state = pomodoroTimers[widgetId];
+    const startBtn = document.getElementById(`pomodoroStart-${widgetId}`);
+
+    if (state.isRunning) {
+        // Pause
+        clearInterval(state.intervalId);
+        state.isRunning = false;
+        startBtn.textContent = 'Start';
+        playSound('click');
+    } else {
+        // Start
+        state.isRunning = true;
+        startBtn.textContent = 'Pause';
+        playSound('click');
+
+        state.intervalId = setInterval(() => {
+            if (state.seconds === 0) {
+                if (state.minutes === 0) {
+                    // Timer complete
+                    clearInterval(state.intervalId);
+                    state.isRunning = false;
+                    startBtn.textContent = 'Start';
+                    playSound('alert');
+
+                    // Switch between focus and break
+                    if (state.isBreak) {
+                        state.isBreak = false;
+                        state.minutes = state.focusTime;
+                        document.getElementById(`pomodoroLabel-${widgetId}`).textContent = 'Focus Time';
+                    } else {
+                        state.isBreak = true;
+                        state.minutes = state.breakTime;
+                        document.getElementById(`pomodoroLabel-${widgetId}`).textContent = 'Break Time';
+                    }
+                    state.seconds = 0;
+                    updatePomodoroDisplay(widgetId);
+                    return;
+                }
+                state.minutes--;
+                state.seconds = 59;
+            } else {
+                state.seconds--;
+            }
+            updatePomodoroDisplay(widgetId);
+        }, 1000);
+    }
+}
+
+function resetPomodoro(widgetId) {
+    const state = pomodoroTimers[widgetId];
+    const startBtn = document.getElementById(`pomodoroStart-${widgetId}`);
+
+    clearInterval(state.intervalId);
+    state.isRunning = false;
+    state.isBreak = false;
+    state.minutes = state.focusTime;
+    state.seconds = 0;
+    startBtn.textContent = 'Start';
+    document.getElementById(`pomodoroLabel-${widgetId}`).textContent = 'Focus Time';
+    updatePomodoroDisplay(widgetId);
+    playSound('click');
+}
+
+function updatePomodoroDisplay(widgetId) {
+    const state = pomodoroTimers[widgetId];
+    const timeDisplay = document.getElementById(`pomodoroTime-${widgetId}`);
+    const ring = document.getElementById(`pomodoroRing-${widgetId}`);
+
+    const mins = String(state.minutes).padStart(2, '0');
+    const secs = String(state.seconds).padStart(2, '0');
+    timeDisplay.textContent = `${mins}:${secs}`;
+
+    // Update progress ring
+    const totalSeconds = (state.isBreak ? state.breakTime : state.focusTime) * 60;
+    const currentSeconds = state.minutes * 60 + state.seconds;
+    const progress = ((totalSeconds - currentSeconds) / totalSeconds) * 100;
+
+    const circumference = 2 * Math.PI * 90;
+    const offset = circumference - (progress / 100) * circumference;
+    ring.style.strokeDasharray = `${circumference} ${circumference}`;
+    ring.style.strokeDashoffset = offset;
+}
+
+// ===== HABITS TRACKER WIDGET =====
+const habitsData = {};
+
+function initHabitsWidget(widgetId) {
+    const saved = localStorage.getItem(`${STORAGE_KEYS.HABITS}-${widgetId}`);
+    habitsData[widgetId] = saved ? JSON.parse(saved) : [];
+
+    renderHabits(widgetId);
+}
+
+function addHabit(widgetId) {
+    const input = document.getElementById(`habitInput-${widgetId}`);
+    const habitName = input.value.trim();
+
+    if (!habitName) return;
+
+    habitsData[widgetId].push({
+        name: habitName,
+        history: {},
+        streak: 0,
+        createdAt: Date.now()
+    });
+
+    saveHabits(widgetId);
+    renderHabits(widgetId);
+    input.value = '';
+    playSound('click');
+}
+
+function toggleHabitDay(widgetId, habitIndex) {
+    const today = new Date().toISOString().split('T')[0];
+    const habit = habitsData[widgetId][habitIndex];
+
+    if (habit.history[today]) {
+        delete habit.history[today];
+    } else {
+        habit.history[today] = true;
+    }
+
+    // Calculate streak
+    habit.streak = calculateStreak(habit.history);
+
+    saveHabits(widgetId);
+    renderHabits(widgetId);
+    playSound('complete');
+}
+
+function calculateStreak(history) {
+    let streak = 0;
+    let currentDate = new Date();
+
+    while (true) {
+        const dateStr = currentDate.toISOString().split('T')[0];
+        if (history[dateStr]) {
+            streak++;
+            currentDate.setDate(currentDate.getDate() - 1);
+        } else {
+            break;
+        }
+    }
+
+    return streak;
+}
+
+function deleteHabit(widgetId, habitIndex) {
+    if (confirm('Delete this habit?')) {
+        habitsData[widgetId].splice(habitIndex, 1);
+        saveHabits(widgetId);
+        renderHabits(widgetId);
+        playSound('click');
+    }
+}
+
+function renderHabits(widgetId) {
+    const container = document.getElementById(`habitsList-${widgetId}`);
+    const habits = habitsData[widgetId];
+
+    if (!habits || habits.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">No habits yet</div></div>';
+        return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+
+    container.innerHTML = habits.map((habit, index) => `
+        <div class="habit-item">
+            <div class="habit-header">
+                <div class="habit-name">${escapeHtml(habit.name)}</div>
+                <div class="habit-streak">${habit.streak > 0 ? `🔥 ${habit.streak} day${habit.streak > 1 ? 's' : ''}` : ''}</div>
+                <button class="habit-delete" onclick="deleteHabit('${widgetId}', ${index})">×</button>
+            </div>
+            <div class="habit-check">
+                <label class="habit-checkbox-label">
+                    <input type="checkbox"
+                           ${habit.history[today] ? 'checked' : ''}
+                           onchange="toggleHabitDay('${widgetId}', ${index})">
+                    <span>Today</span>
+                </label>
+            </div>
+        </div>
+    `).join('');
+}
+
+function saveHabits(widgetId) {
+    localStorage.setItem(`${STORAGE_KEYS.HABITS}-${widgetId}`, JSON.stringify(habitsData[widgetId]));
+}
+
+// ===== STICKY NOTES WIDGET =====
+const stickyNotesData = {};
+
+function initStickyNotesWidget(widgetId) {
+    const saved = localStorage.getItem(`${STORAGE_KEYS.STICKY_NOTES}-${widgetId}`);
+    stickyNotesData[widgetId] = saved ? JSON.parse(saved) : [];
+
+    renderStickyNotes(widgetId);
+}
+
+function addStickyNote(widgetId, color) {
+    stickyNotesData[widgetId].push({
+        content: '',
+        color: color,
+        createdAt: Date.now()
+    });
+
+    saveStickyNotes(widgetId);
+    renderStickyNotes(widgetId);
+    playSound('click');
+
+    // Focus the new note
+    setTimeout(() => {
+        const notes = document.querySelectorAll(`#stickynotesGrid-${widgetId} .sticky-note-content`);
+        if (notes.length > 0) {
+            notes[notes.length - 1].focus();
+        }
+    }, 100);
+}
+
+function updateStickyNote(widgetId, noteIndex, content) {
+    stickyNotesData[widgetId][noteIndex].content = content;
+    saveStickyNotes(widgetId);
+}
+
+function deleteStickyNote(widgetId, noteIndex) {
+    stickyNotesData[widgetId].splice(noteIndex, 1);
+    saveStickyNotes(widgetId);
+    renderStickyNotes(widgetId);
+    playSound('click');
+}
+
+function renderStickyNotes(widgetId) {
+    const container = document.getElementById(`stickynotesGrid-${widgetId}`);
+    const notes = stickyNotesData[widgetId];
+
+    if (!notes || notes.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-text">Click a color to add a sticky note</div></div>';
+        return;
+    }
+
+    container.innerHTML = notes.map((note, index) => `
+        <div class="sticky-note sticky-note-${note.color}">
+            <button class="sticky-note-delete" onclick="deleteStickyNote('${widgetId}', ${index})">×</button>
+            <textarea
+                class="sticky-note-content"
+                placeholder="Type here..."
+                oninput="updateStickyNote('${widgetId}', ${index}, this.value)"
+            >${escapeHtml(note.content)}</textarea>
+        </div>
+    `).join('');
+}
+
+function saveStickyNotes(widgetId) {
+    localStorage.setItem(`${STORAGE_KEYS.STICKY_NOTES}-${widgetId}`, JSON.stringify(stickyNotesData[widgetId]));
+}
+
+// ===== BACKGROUND GRADIENTS =====
+function applyBackgroundGradient(style) {
+    const gradients = {
+        'default': 'linear-gradient(135deg, var(--bg-primary) 0%, #1a1a2e 100%)',
+        'purple': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        'ocean': 'linear-gradient(135deg, #2E3192 0%, #1BFFFF 100%)',
+        'sunset': 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+        'forest': 'linear-gradient(135deg, #134E5E 0%, #71B280 100%)',
+        'midnight': 'linear-gradient(135deg, #232526 0%, #414345 100%)'
+    };
+
+    // For light mode, use lighter versions
+    if (!userSettings.darkMode) {
+        const lightGradients = {
+            'default': 'linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%)',
+            'purple': 'linear-gradient(135deg, #a8b4f5 0%, #c4a3d8 100%)',
+            'ocean': 'linear-gradient(135deg, #7a85d9 0%, #8ef7ff 100%)',
+            'sunset': 'linear-gradient(135deg, #fdb6cc 0%, #fff4a3 100%)',
+            'forest': 'linear-gradient(135deg, #6ba3b0 0%, #b8ddc4 100%)',
+            'midnight': 'linear-gradient(135deg, #9a9a9a 0%, #c4c4c4 100%)'
+        };
+        document.body.style.background = lightGradients[style] || lightGradients['default'];
+    } else {
+        document.body.style.background = gradients[style] || gradients['default'];
+    }
+}
+
+// ===== WIDGET LAYOUTS =====
+function saveWidgetLayout() {
+    const layoutName = prompt('Enter a name for this layout:');
+    if (!layoutName) return;
+
+    const layouts = JSON.parse(localStorage.getItem(STORAGE_KEYS.LAYOUTS) || '{}');
+    layouts[layoutName] = {
+        widgets: widgetStates,
+        timestamp: Date.now()
+    };
+
+    localStorage.setItem(STORAGE_KEYS.LAYOUTS, JSON.stringify(layouts));
+    alert(`Layout "${layoutName}" saved!`);
+    playSound('complete');
+}
+
+function loadWidgetLayout() {
+    const layouts = JSON.parse(localStorage.getItem(STORAGE_KEYS.LAYOUTS) || '{}');
+    const layoutNames = Object.keys(layouts);
+
+    if (layoutNames.length === 0) {
+        alert('No saved layouts found!');
+        return;
+    }
+
+    let options = 'Available layouts:\n';
+    layoutNames.forEach((name, i) => {
+        options += `${i + 1}. ${name}\n`;
+    });
+
+    const choice = prompt(options + '\nEnter layout name to load:');
+    if (!choice || !layouts[choice]) {
+        alert('Layout not found!');
+        return;
+    }
+
+    if (confirm(`Load layout "${choice}"? This will reset current widget positions.`)) {
+        widgetStates = layouts[choice].widgets;
+        localStorage.setItem(STORAGE_KEYS.WIDGETS, JSON.stringify(widgetStates));
+        location.reload();
+    }
 }
 

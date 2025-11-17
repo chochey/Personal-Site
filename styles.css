@@ -1605,3 +1605,508 @@ select {
 .widget:hover {
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
 }
+
+/* ===== TODO ENHANCEMENTS (Tags & Due Dates) ===== */
+.todo-input-container {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.todo-date-input {
+    padding: 8px 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    flex: 0 0 auto;
+    width: auto;
+}
+
+.todo-tags-input {
+    flex: 1 1 150px;
+    min-width: 150px;
+}
+
+.todo-meta {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+.todo-due-date {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.todo-tag {
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--accent-primary);
+    color: white;
+    white-space: nowrap;
+}
+
+/* ===== POMODORO TIMER WIDGET ===== */
+.pomodoro-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    gap: 20px;
+}
+
+.pomodoro-display {
+    text-align: center;
+}
+
+.pomodoro-time {
+    font-size: 3.5rem;
+    font-weight: 300;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    font-variant-numeric: tabular-nums;
+}
+
+.pomodoro-label {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.pomodoro-progress {
+    position: relative;
+    width: 200px;
+    height: 200px;
+}
+
+.pomodoro-ring {
+    transform: rotate(-90deg);
+}
+
+.pomodoro-ring-bg {
+    fill: none;
+    stroke: var(--bg-tertiary);
+    stroke-width: 8;
+}
+
+.pomodoro-ring-progress {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.pomodoro-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.pomodoro-settings {
+    display: flex;
+    gap: 15px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.pomodoro-input {
+    width: 50px;
+    padding: 4px 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+/* ===== HABITS TRACKER WIDGET ===== */
+.habits-container {
+    padding: 15px;
+}
+
+.habits-input-container {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.habits-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.habit-item {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 15px;
+    transition: all 0.2s ease;
+    animation: fadeIn 0.3s ease;
+}
+
+.habit-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.habit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.habit-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    flex: 1;
+}
+
+.habit-streak {
+    font-size: 0.85rem;
+    color: var(--warning);
+    font-weight: 600;
+    margin-right: 10px;
+}
+
+.habit-delete {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0 5px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.habit-delete:hover {
+    opacity: 1;
+}
+
+.habit-check {
+    display: flex;
+    gap: 10px;
+}
+
+.habit-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.habit-checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: var(--success);
+}
+
+.habit-checkbox-label input[type="checkbox"]:checked + span {
+    color: var(--success);
+    font-weight: 600;
+}
+
+/* ===== STICKY NOTES WIDGET ===== */
+.stickynotes-container {
+    padding: 15px;
+}
+
+.stickynotes-controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.stickynotes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 15px;
+}
+
+.sticky-note {
+    position: relative;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    min-height: 150px;
+    transition: all 0.3s ease;
+    animation: slideIn 0.3s ease;
+}
+
+.sticky-note:hover {
+    transform: translateY(-5px) rotate(1deg);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+}
+
+.sticky-note-yellow {
+    background: linear-gradient(135deg, #fff7b0 0%, #ffe680 100%);
+    color: #333;
+}
+
+.sticky-note-blue {
+    background: linear-gradient(135deg, #b3d9ff 0%, #80c0ff 100%);
+    color: #1a1a1a;
+}
+
+.sticky-note-green {
+    background: linear-gradient(135deg, #b8f3b8 0%, #80e680 100%);
+    color: #1a4d1a;
+}
+
+.sticky-note-pink {
+    background: linear-gradient(135deg, #ffc0e0 0%, #ff99cc 100%);
+    color: #4d1a33;
+}
+
+.sticky-note-delete {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.sticky-note:hover .sticky-note-delete {
+    opacity: 1;
+}
+
+.sticky-note-delete:hover {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.sticky-note-content {
+    width: 100%;
+    min-height: 120px;
+    background: transparent;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: inherit;
+}
+
+/* ===== ANIMATIONS & MICRO-INTERACTIONS ===== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Apply animations to new items */
+.site-item, .todo-item, .habit-item {
+    animation: fadeIn 0.3s ease;
+}
+
+.widget {
+    animation: slideIn 0.4s ease;
+}
+
+/* Enhanced button micro-interactions */
+.btn, .widget-btn, .toolbar-btn {
+    transition: all 0.2s ease;
+}
+
+.btn:hover, .widget-btn:hover, .toolbar-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn:active, .widget-btn:active, .toolbar-btn:active {
+    transform: translateY(0) scale(0.95);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
+}
+
+/* Enhanced input interactions */
+.input:focus, .priority-select:focus, .todo-date-input:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+/* Checkbox animations */
+input[type="checkbox"] {
+    transition: transform 0.2s ease;
+}
+
+input[type="checkbox"]:checked {
+    animation: pulse 0.3s ease;
+}
+
+/* Widget resize handle enhancement */
+.widget-resize-handle:hover {
+    background: var(--accent-primary);
+    opacity: 0.8;
+}
+
+/* Settings panel enhancements */
+.layout-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 5px;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+
+/* Loading state for widgets */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--bg-tertiary);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Enhanced hover states for interactive elements */
+.site-icon, .toolbar-btn, .btn-add {
+    transition: transform 0.2s ease;
+}
+
+.site-icon:hover {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.btn-add:hover {
+    transform: rotate(90deg);
+}
+
+/* Smooth focus transitions */
+*:focus {
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+/* Enhanced widget controls */
+.widget-controls button {
+    transition: all 0.2s ease;
+}
+
+.widget-controls button:hover {
+    background: var(--accent-primary);
+    transform: scale(1.1);
+}
+
+/* Todo item enhanced states */
+.todo-item.completed {
+    opacity: 0.6;
+    animation: fadeIn 0.3s ease;
+}
+
+.todo-item.completed .todo-text {
+    text-decoration: line-through;
+}
+
+/* Priority badge enhanced styling */
+.todo-priority {
+    animation: pulse 0.5s ease;
+}
+
+/* Enhanced empty states */
+.empty-state {
+    animation: fadeIn 0.5s ease;
+}
+
+/* Responsive adjustments for new widgets */
+@media (max-width: 768px) {
+    .pomodoro-time {
+        font-size: 2.5rem;
+    }
+
+    .pomodoro-progress {
+        width: 150px;
+        height: 150px;
+    }
+
+    .stickynotes-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .todo-input-container {
+        flex-direction: column;
+    }
+
+    .todo-tags-input, .todo-date-input {
+        width: 100%;
+    }
+}

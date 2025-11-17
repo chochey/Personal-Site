@@ -34,6 +34,30 @@
                     </div>
                 </div>
                 <div class="setting-group">
+                    <label>Background Style:</label>
+                    <select id="backgroundStyle" class="input">
+                        <option value="default">Default Gradient</option>
+                        <option value="purple">Purple Dream</option>
+                        <option value="ocean">Ocean Blue</option>
+                        <option value="sunset">Sunset Orange</option>
+                        <option value="forest">Forest Green</option>
+                        <option value="midnight">Midnight Purple</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="soundEffects" checked>
+                        Sound Effects
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label>Widget Layouts:</label>
+                    <div class="layout-buttons">
+                        <button class="btn btn-secondary btn-sm" id="saveLayoutBtn">Save Layout</button>
+                        <button class="btn btn-secondary btn-sm" id="loadLayoutBtn">Load Layout</button>
+                    </div>
+                </div>
+                <div class="setting-group">
                     <label>Data Management:</label>
                     <button class="btn btn-secondary" id="exportBtn">Export Data</button>
                     <button class="btn btn-secondary" id="importBtn">Import Data</button>
@@ -106,6 +130,18 @@
                     <span class="widget-type-icon">🌤️</span>
                     <span class="widget-type-name">Weather</span>
                 </button>
+                <button class="widget-type-btn" onclick="createNewWidget('pomodoro')">
+                    <span class="widget-type-icon">⏱️</span>
+                    <span class="widget-type-name">Pomodoro Timer</span>
+                </button>
+                <button class="widget-type-btn" onclick="createNewWidget('habits')">
+                    <span class="widget-type-icon">✨</span>
+                    <span class="widget-type-name">Habits Tracker</span>
+                </button>
+                <button class="widget-type-btn" onclick="createNewWidget('stickynotes')">
+                    <span class="widget-type-icon">📋</span>
+                    <span class="widget-type-name">Sticky Notes</span>
+                </button>
             </div>
         </div>
 
@@ -150,6 +186,8 @@
                             <option value="medium">Medium</option>
                             <option value="low">Low</option>
                         </select>
+                        <input type="date" id="todoDueDate" class="todo-date-input" title="Due Date">
+                        <input type="text" id="todoTags" placeholder="Tags (comma-separated)" class="input todo-tags-input" title="Tags">
                         <button class="btn btn-primary" id="addTodoBtn">Add</button>
                     </div>
                     <ul class="todo-list" id="todoList"></ul>
