@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Section -->
+        <header class="header">
+            <div class="time-container">
+                <div class="time" id="time"></div>
+                <div class="date" id="date"></div>
+            </div>
+            <div class="greeting" id="greeting"></div>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <main class="dashboard">
+            <!-- Pinned Websites Section -->
+            <section class="card pinned-sites">
+                <div class="card-header">
+                    <h2>📌 Pinned Sites</h2>
+                    <button class="btn-add" id="addSiteBtn">+</button>
+                </div>
+                <div class="sites-grid" id="sitesGrid"></div>
+
+                <!-- Add Site Modal -->
+                <div class="modal" id="siteModal">
+                    <div class="modal-content">
+                        <h3>Add Website</h3>
+                        <input type="text" id="siteName" placeholder="Name" class="input">
+                        <input type="url" id="siteUrl" placeholder="https://example.com" class="input">
+                        <div class="modal-actions">
+                            <button class="btn btn-secondary" id="cancelSite">Cancel</button>
+                            <button class="btn btn-primary" id="saveSite">Save</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Todo List Section -->
+            <section class="card todo-section">
+                <div class="card-header">
+                    <h2>✓ Todo List</h2>
+                </div>
+                <div class="todo-input-container">
+                    <input type="text" id="todoInput" placeholder="Add a new task..." class="input">
+                    <button class="btn btn-primary" id="addTodoBtn">Add</button>
+                </div>
+                <ul class="todo-list" id="todoList"></ul>
+            </section>
+
+            <!-- Notepad Section -->
+            <section class="card notepad-section">
+                <div class="card-header">
+                    <h2>📝 Notepad</h2>
+                    <span class="auto-save" id="saveStatus">Auto-saved</span>
+                </div>
+                <textarea id="notepad" class="notepad" placeholder="Start typing your notes here..."></textarea>
+            </section>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
