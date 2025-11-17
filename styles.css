@@ -846,6 +846,12 @@ body {
     transform: scale(0.95);
 }
 
+.toolbar-btn.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: white;
+}
+
 .toolbar-select {
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);

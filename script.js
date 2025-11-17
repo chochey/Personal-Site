@@ -568,6 +568,11 @@ function initNotepadWidget(widgetId) {
             saveStatus.style.color = 'var(--success)';
         }, 1000);
     });
+
+    // Update toolbar button states on selection change
+    notepad.addEventListener('mouseup', updateToolbarState);
+    notepad.addEventListener('keyup', updateToolbarState);
+    notepad.addEventListener('focus', updateToolbarState);
 }
 
 // ===== PINNED SITES =====
@@ -946,9 +951,30 @@ function initNotepad() {
         }, 1000);
     });
 
+    // Update toolbar button states on selection change
+    notepad.addEventListener('mouseup', updateToolbarState);
+    notepad.addEventListener('keyup', updateToolbarState);
+    notepad.addEventListener('focus', updateToolbarState);
+
     // Prevent paste with formatting (optional - you can remove this if you want to keep formatting when pasting)
     notepad.addEventListener('paste', (e) => {
         // Allow default paste behavior to keep formatting
+    });
+}
+
+// Update toolbar button active states based on current selection
+function updateToolbarState() {
+    const commands = ['bold', 'italic', 'underline', 'strikeThrough'];
+
+    commands.forEach(command => {
+        const button = document.querySelector(`[onclick="formatDoc('${command}')"]`);
+        if (button) {
+            if (document.queryCommandState(command)) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        }
     });
 }
 
@@ -956,6 +982,7 @@ function initNotepad() {
 function formatDoc(command, value = null) {
     document.execCommand(command, false, value);
     document.getElementById('notepad').focus();
+    updateToolbarState();
 }
 
 // ===== UTILITY FUNCTIONS =====
