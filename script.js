@@ -4,7 +4,8 @@ const STORAGE_KEYS = {
     TODOS: 'todos',
     NOTES: 'notes',
     WIDGETS: 'widgetStates',
-    BACKGROUND: 'backgroundSettings'
+    SETTINGS: 'userSettings',
+    WEATHER: 'weatherData'
 };
 
 // Widget state
@@ -13,6 +14,7 @@ let widgetCounter = 1;
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    initSettings();
     initTime();
     initGreeting();
     initWidgets();
@@ -22,6 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     initNotepad();
     initSearch();
     initKeyboardShortcuts();
+    initDarkMode();
+    initHeaderControls();
 });
 
 // ===== TIME & DATE =====
@@ -364,6 +368,20 @@ function createNewWidget(type) {
             `,
             hasAddBtn: false,
             hasSaveStatus: true
+        },
+        'weather': {
+            icon: '🌤️',
+            title: 'Weather',
+            content: `
+                <div id="weather-${newWidgetId}" class="weather-container">
+                    <div class="weather-setup">
+                        <p>Enter your city to get weather:</p>
+                        <input type="text" id="weatherCity-${newWidgetId}" placeholder="City name" class="input">
+                        <button class="btn btn-primary" onclick="fetchWeatherForWidget('${newWidgetId}')">Get Weather</button>
+                    </div>
+                </div>
+            `,
+            hasAddBtn: false
         }
     };
 
@@ -620,6 +638,17 @@ function renderSites() {
     const grid = document.getElementById('sitesGrid');
     grid.innerHTML = '';
 
+    if (pinnedSites.length === 0) {
+        grid.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📌</div>
+                <div class="empty-state-text">No pinned sites yet</div>
+                <div class="empty-state-hint">Press 'L' or click + to add one</div>
+            </div>
+        `;
+        return;
+    }
+
     pinnedSites.forEach((site, index) => {
         const siteEl = document.createElement('div');
         siteEl.className = 'site-item';
@@ -726,27 +755,6 @@ function getFaviconUrl(url) {
     }
 }
 
-function openSiteModal(index = null) {
-    editingIndex = index;
-    const modal = document.getElementById('siteModal');
-    const title = modal.querySelector('h3');
-
-    if (index !== null) {
-        // Editing existing site
-        title.textContent = 'Edit Website';
-        document.getElementById('siteName').value = pinnedSites[index].name;
-        document.getElementById('siteUrl').value = pinnedSites[index].url;
-    } else {
-        // Adding new site
-        title.textContent = 'Add Website';
-        document.getElementById('siteName').value = '';
-        document.getElementById('siteUrl').value = '';
-    }
-
-    modal.classList.add('active');
-    document.getElementById('siteName').focus();
-}
-
 function closeSiteModal() {
     document.getElementById('siteModal').classList.remove('active');
     editingIndex = null;
@@ -803,11 +811,15 @@ let todos = [];
 function initTodos() {
     loadTodos();
     renderTodos();
+    updateTodoStats();
 
     document.getElementById('addTodoBtn').addEventListener('click', addTodo);
     document.getElementById('todoInput').addEventListener('keypress', (e) => {
         if (e.key === 'Enter') addTodo();
     });
+
+    // Auto-focus on input
+    document.getElementById('todoInput').focus();
 }
 
 function loadTodos() {
@@ -823,15 +835,31 @@ function renderTodos() {
     const list = document.getElementById('todoList');
     list.innerHTML = '';
 
+    if (todos.length === 0) {
+        list.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">✓</div>
+                <div class="empty-state-text">No todos yet</div>
+                <div class="empty-state-hint">Press 'N' or click Add to create one</div>
+            </div>
+        `;
+        return;
+    }
+
     todos.forEach((todo, index) => {
         const li = document.createElement('li');
         li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
         li.draggable = true;
         li.dataset.index = index;
 
+        const priorityBadge = todo.priority && todo.priority !== 'none'
+            ? `<span class="todo-priority priority-${todo.priority}">${todo.priority}</span>`
+            : '';
+
         li.innerHTML = `
             <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''}
                    onchange="toggleTodo(${index})">
+            ${priorityBadge}
             <span class="todo-text">${escapeHtml(todo.text)}</span>
             <button class="todo-delete" onclick="deleteTodo(${index})">×</button>
         `;
@@ -846,6 +874,8 @@ function renderTodos() {
 
         list.appendChild(li);
     });
+
+    updateTodoStats();
 }
 
 let draggedTodoIndex = null;
@@ -904,25 +934,47 @@ function handleTodoDragEnd(e) {
 function addTodo() {
     const input = document.getElementById('todoInput');
     const text = input.value.trim();
+    const priority = document.getElementById('todoPriority').value;
 
     if (!text) return;
 
-    todos.push({ text, completed: false, createdAt: Date.now() });
+    todos.push({
+        text,
+        completed: false,
+        priority: priority,
+        createdAt: Date.now()
+    });
     saveTodosToStorage();
     renderTodos();
     input.value = '';
+    document.getElementById('todoPriority').value = 'none';
+    input.focus();
+}
+
+function updateTodoStats() {
+    const completedCount = todos.filter(t => t.completed).length;
+    const totalCount = todos.length;
+    const statsEl = document.getElementById('todoStats');
+
+    if (statsEl) {
+        statsEl.querySelector('.todo-count').textContent = `${completedCount}/${totalCount} completed`;
+    }
 }
 
 function toggleTodo(index) {
     todos[index].completed = !todos[index].completed;
     saveTodosToStorage();
     renderTodos();
+    updateTodoStats();
 }
 
 function deleteTodo(index) {
-    todos.splice(index, 1);
-    saveTodosToStorage();
-    renderTodos();
+    if (confirm('Delete this todo?')) {
+        todos.splice(index, 1);
+        saveTodosToStorage();
+        renderTodos();
+        updateTodoStats();
+    }
 }
 
 // ===== NOTEPAD =====
@@ -1118,18 +1170,320 @@ function closeSearch() {
 // ===== KEYBOARD SHORTCUTS =====
 function initKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
+        // Ignore if typing in input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+            return;
+        }
+
         // Ctrl+K or Cmd+K for search
         if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
             e.preventDefault();
             openSearch();
         }
 
+        // N for new todo
+        if (e.key === 'n' || e.key === 'N') {
+            e.preventDefault();
+            const todoWidget = document.getElementById('widget-todos');
+            if (todoWidget && !todoWidget.classList.contains('closed') && !todoWidget.classList.contains('minimized')) {
+                const input = document.getElementById('todoInput');
+                input.focus();
+            }
+        }
+
+        // L for new link
+        if (e.key === 'l' || e.key === 'L') {
+            e.preventDefault();
+            openSiteModal();
+        }
+
+        // ? for keyboard shortcuts
+        if (e.key === '?') {
+            e.preventDefault();
+            document.getElementById('shortcutsPanel').classList.toggle('active');
+        }
+
         // Escape to close modals
         if (e.key === 'Escape') {
             closeSearch();
             document.getElementById('newWidgetMenu').classList.remove('active');
+            document.getElementById('settingsPanel').classList.remove('active');
+            document.getElementById('shortcutsPanel').classList.remove('active');
             closeSiteModal();
         }
     });
+}
+
+// ===== SETTINGS MANAGEMENT =====
+let userSettings = {
+    darkMode: true,
+    accentColor: '#4a9eff',
+    gridSnap: false
+};
+
+function initSettings() {
+    const saved = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+    if (saved) {
+        userSettings = { ...userSettings, ...JSON.parse(saved) };
+    }
+    applySettings();
+}
+
+function saveSettings() {
+    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(userSettings));
+}
+
+function applySettings() {
+    // Apply dark mode
+    if (!userSettings.darkMode) {
+        document.body.classList.add('light-mode');
+    }
+
+    // Apply accent color
+    document.documentElement.style.setProperty('--accent-primary', userSettings.accentColor);
+    document.documentElement.style.setProperty('--accent-hover', adjustColorBrightness(userSettings.accentColor, -20));
+}
+
+function adjustColorBrightness(color, percent) {
+    const num = parseInt(color.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) + amt;
+    const G = (num >> 8 & 0x00FF) + amt;
+    const B = (num & 0x0000FF) + amt;
+    return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+        (B < 255 ? B < 1 ? 0 : B : 255))
+        .toString(16).slice(1);
+}
+
+// ===== DARK MODE =====
+function initDarkMode() {
+    const darkModeBtn = document.getElementById('darkModeBtn');
+
+    // Set initial icon
+    updateDarkModeIcon();
+
+    darkModeBtn.addEventListener('click', () => {
+        userSettings.darkMode = !userSettings.darkMode;
+        document.body.classList.toggle('light-mode');
+        updateDarkModeIcon();
+        saveSettings();
+    });
+}
+
+function updateDarkModeIcon() {
+    const darkModeBtn = document.getElementById('darkModeBtn');
+    darkModeBtn.textContent = userSettings.darkMode ? '🌙' : '☀️';
+}
+
+// ===== HEADER CONTROLS =====
+function initHeaderControls() {
+    // Settings button
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsPanel = document.getElementById('settingsPanel');
+
+    settingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        settingsPanel.classList.toggle('active');
+        document.getElementById('shortcutsPanel').classList.remove('active');
+    });
+
+    // Help button
+    const helpBtn = document.getElementById('helpBtn');
+    const shortcutsPanel = document.getElementById('shortcutsPanel');
+
+    helpBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        shortcutsPanel.classList.toggle('active');
+        settingsPanel.classList.remove('active');
+    });
+
+    // Accent color picker
+    const colorPicker = document.getElementById('accentColorPicker');
+    colorPicker.value = userSettings.accentColor;
+
+    colorPicker.addEventListener('change', (e) => {
+        userSettings.accentColor = e.target.value;
+        applySettings();
+        saveSettings();
+    });
+
+    // Reset color button
+    document.getElementById('resetColorBtn').addEventListener('click', () => {
+        userSettings.accentColor = '#4a9eff';
+        colorPicker.value = userSettings.accentColor;
+        applySettings();
+        saveSettings();
+    });
+
+    // Export button
+    document.getElementById('exportBtn').addEventListener('click', exportData);
+
+    // Import button
+    document.getElementById('importBtn').addEventListener('click', () => {
+        document.getElementById('importFile').click();
+    });
+
+    document.getElementById('importFile').addEventListener('change', importData);
+
+    // Close panels when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!settingsPanel.contains(e.target) && e.target !== settingsBtn) {
+            settingsPanel.classList.remove('active');
+        }
+        if (!shortcutsPanel.contains(e.target) && e.target !== helpBtn) {
+            shortcutsPanel.classList.remove('active');
+        }
+    });
+}
+
+// ===== EXPORT/IMPORT =====
+function exportData() {
+    const data = {
+        sites: localStorage.getItem(STORAGE_KEYS.SITES),
+        todos: localStorage.getItem(STORAGE_KEYS.TODOS),
+        notes: localStorage.getItem(STORAGE_KEYS.NOTES),
+        widgets: localStorage.getItem(STORAGE_KEYS.WIDGETS),
+        settings: localStorage.getItem(STORAGE_KEYS.SETTINGS),
+        weather: localStorage.getItem(STORAGE_KEYS.WEATHER),
+        exportDate: new Date().toISOString()
+    };
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dashboard-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+function importData(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const data = JSON.parse(event.target.result);
+
+            if (confirm('Import data? This will overwrite your current dashboard.')) {
+                if (data.sites) localStorage.setItem(STORAGE_KEYS.SITES, data.sites);
+                if (data.todos) localStorage.setItem(STORAGE_KEYS.TODOS, data.todos);
+                if (data.notes) localStorage.setItem(STORAGE_KEYS.NOTES, data.notes);
+                if (data.widgets) localStorage.setItem(STORAGE_KEYS.WIDGETS, data.widgets);
+                if (data.settings) localStorage.setItem(STORAGE_KEYS.SETTINGS, data.settings);
+                if (data.weather) localStorage.setItem(STORAGE_KEYS.WEATHER, data.weather);
+
+                alert('Data imported successfully! Reloading...');
+                location.reload();
+            }
+        } catch (error) {
+            alert('Error importing data. Please check the file format.');
+        }
+    };
+    reader.readAsText(file);
+
+    // Reset file input
+    e.target.value = '';
+}
+
+
+
+// ===== WEATHER WIDGET =====
+async function fetchWeatherForWidget(widgetId) {
+    const city = document.getElementById(`weatherCity-${widgetId}`).value.trim();
+    const container = document.getElementById(`weather-${widgetId}`);
+
+    if (!city) {
+        alert("Please enter a city name");
+        return;
+    }
+
+    container.innerHTML = `<div class="loading"><div class="loading-spinner"></div></div>`;
+
+    try {
+        // Using OpenWeatherMap API (free tier)
+        // Note: You would need an API key for this to work
+        // For demo purposes, using a mock response
+        const response = await fetch(`https://wttr.in/${encodeURIComponent(city)}?format=j1`);
+
+        if (!response.ok) throw new Error("City not found");
+
+        const data = await response.json();
+        const current = data.current_condition[0];
+
+        const iconMap = {
+            "Sunny": "☀️", "Clear": "🌙", "Partly cloudy": "⛅",
+            "Cloudy": "☁️", "Overcast": "☁️", "Mist": "🌫️",
+            "Fog": "🌫️", "Light rain": "🌧️", "Rain": "🌧️",
+            "Heavy rain": "🌧️", "Snow": "❄️", "Thunderstorm": "⛈️"
+        };
+
+        const icon = iconMap[current.weatherDesc[0].value] || "🌤️";
+
+        container.innerHTML = `
+            <div class="weather-location">${city}</div>
+            <div class="weather-main">
+                <div class="weather-icon">${icon}</div>
+                <div class="weather-temp">${current.temp_C}°C</div>
+            </div>
+            <div class="weather-description">${current.weatherDesc[0].value}</div>
+            <div class="weather-details">
+                <div class="weather-detail">
+                    <div class="weather-detail-label">Feels Like</div>
+                    <div class="weather-detail-value">${current.FeelsLikeC}°C</div>
+                </div>
+                <div class="weather-detail">
+                    <div class="weather-detail-label">Humidity</div>
+                    <div class="weather-detail-value">${current.humidity}%</div>
+                </div>
+                <div class="weather-detail">
+                    <div class="weather-detail-label">Wind</div>
+                    <div class="weather-detail-value">${current.windspeedKmph} km/h</div>
+                </div>
+                <div class="weather-detail">
+                    <div class="weather-detail-label">Pressure</div>
+                    <div class="weather-detail-value">${current.pressure} mb</div>
+                </div>
+            </div>
+        `;
+
+        // Save city to localStorage
+        localStorage.setItem(`weather-city-${widgetId}`, city);
+    } catch (error) {
+        container.innerHTML = `
+            <div class="weather-setup">
+                <p>Enter your city to get weather:</p>
+                <input type="text" id="weatherCity-${widgetId}" placeholder="City name" class="input" value="${city}">
+                <button class="btn btn-primary" onclick="fetchWeatherForWidget('${widgetId}')">Get Weather</button>
+                <div class="weather-error">Unable to fetch weather. Please try again.</div>
+            </div>
+        `;
+    }
+}
+
+// Auto-focus on site modal
+function openSiteModal(index = null) {
+    editingIndex = index;
+    const modal = document.getElementById('siteModal');
+    const title = modal.querySelector('h3');
+
+    if (index !== null) {
+        // Editing existing site
+        title.textContent = 'Edit Website';
+        document.getElementById('siteName').value = pinnedSites[index].name;
+        document.getElementById('siteUrl').value = pinnedSites[index].url;
+    } else {
+        // Adding new site
+        title.textContent = 'Add Website';
+        document.getElementById('siteName').value = '';
+        document.getElementById('siteUrl').value = '';
+    }
+
+    modal.classList.add('active');
+    setTimeout(() => {
+        document.getElementById('siteName').focus();
+    }, 100);
 }
 

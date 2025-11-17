@@ -15,7 +15,61 @@
                 <div class="date" id="date"></div>
             </div>
             <div class="greeting" id="greeting"></div>
+            <div class="header-controls">
+                <button class="header-btn" id="darkModeBtn" title="Toggle Dark Mode">🌙</button>
+                <button class="header-btn" id="settingsBtn" title="Settings">⚙️</button>
+                <button class="header-btn" id="helpBtn" title="Keyboard Shortcuts (?)">?</button>
+            </div>
         </header>
+
+        <!-- Settings Panel -->
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-content">
+                <h3>Settings</h3>
+                <div class="setting-group">
+                    <label>Accent Color:</label>
+                    <div class="color-picker-group">
+                        <input type="color" id="accentColorPicker" value="#4a9eff">
+                        <button class="btn btn-secondary btn-sm" id="resetColorBtn">Reset</button>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <label>Data Management:</label>
+                    <button class="btn btn-secondary" id="exportBtn">Export Data</button>
+                    <button class="btn btn-secondary" id="importBtn">Import Data</button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                </div>
+            </div>
+        </div>
+
+        <!-- Keyboard Shortcuts Panel -->
+        <div class="shortcuts-panel" id="shortcutsPanel">
+            <div class="shortcuts-content">
+                <h3>Keyboard Shortcuts</h3>
+                <div class="shortcut-list">
+                    <div class="shortcut-item">
+                        <span class="shortcut-key">Ctrl + K</span>
+                        <span class="shortcut-desc">Open Quick Search</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-key">N</span>
+                        <span class="shortcut-desc">Add New Todo</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-key">L</span>
+                        <span class="shortcut-desc">Add New Link</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-key">?</span>
+                        <span class="shortcut-desc">Show This Help</span>
+                    </div>
+                    <div class="shortcut-item">
+                        <span class="shortcut-key">Esc</span>
+                        <span class="shortcut-desc">Close Modals</span>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Quick Search Modal -->
         <div class="search-modal" id="searchModal">
@@ -47,6 +101,10 @@
                 <button class="widget-type-btn" onclick="createNewWidget('notepad')">
                     <span class="widget-type-icon">📝</span>
                     <span class="widget-type-name">Notepad</span>
+                </button>
+                <button class="widget-type-btn" onclick="createNewWidget('weather')">
+                    <span class="widget-type-icon">🌤️</span>
+                    <span class="widget-type-name">Weather</span>
                 </button>
             </div>
         </div>
@@ -81,8 +139,17 @@
                     </div>
                 </div>
                 <div class="widget-content">
+                    <div class="todo-stats" id="todoStats">
+                        <span class="todo-count">0/0 completed</span>
+                    </div>
                     <div class="todo-input-container">
                         <input type="text" id="todoInput" placeholder="Add a new task..." class="input">
+                        <select id="todoPriority" class="priority-select" title="Priority">
+                            <option value="none">Priority</option>
+                            <option value="high">High</option>
+                            <option value="medium">Medium</option>
+                            <option value="low">Low</option>
+                        </select>
                         <button class="btn btn-primary" id="addTodoBtn">Add</button>
                     </div>
                     <ul class="todo-list" id="todoList"></ul>
