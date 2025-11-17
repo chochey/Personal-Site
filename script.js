@@ -279,7 +279,7 @@ function initNotepad() {
     // Load saved notes
     const saved = localStorage.getItem(STORAGE_KEYS.NOTES);
     if (saved) {
-        notepad.value = saved;
+        notepad.innerHTML = saved;
     }
 
     // Auto-save on input
@@ -289,11 +289,22 @@ function initNotepad() {
         saveStatus.style.color = 'var(--warning)';
 
         saveTimeout = setTimeout(() => {
-            localStorage.setItem(STORAGE_KEYS.NOTES, notepad.value);
+            localStorage.setItem(STORAGE_KEYS.NOTES, notepad.innerHTML);
             saveStatus.textContent = 'Auto-saved';
             saveStatus.style.color = 'var(--success)';
         }, 1000);
     });
+
+    // Prevent paste with formatting (optional - you can remove this if you want to keep formatting when pasting)
+    notepad.addEventListener('paste', (e) => {
+        // Allow default paste behavior to keep formatting
+    });
+}
+
+// Format document with execCommand
+function formatDoc(command, value = null) {
+    document.execCommand(command, false, value);
+    document.getElementById('notepad').focus();
 }
 
 // ===== UTILITY FUNCTIONS =====

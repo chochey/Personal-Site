@@ -59,7 +59,43 @@
                     <h2>📝 Notepad</h2>
                     <span class="auto-save" id="saveStatus">Auto-saved</span>
                 </div>
-                <textarea id="notepad" class="notepad" placeholder="Start typing your notes here..."></textarea>
+                <div class="editor-toolbar">
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" onclick="formatDoc('bold')" title="Bold (Ctrl+B)"><b>B</b></button>
+                        <button class="toolbar-btn" onclick="formatDoc('italic')" title="Italic (Ctrl+I)"><i>I</i></button>
+                        <button class="toolbar-btn" onclick="formatDoc('underline')" title="Underline (Ctrl+U)"><u>U</u></button>
+                        <button class="toolbar-btn" onclick="formatDoc('strikeThrough')" title="Strikethrough"><s>S</s></button>
+                    </div>
+                    <div class="toolbar-group">
+                        <select class="toolbar-select" onchange="formatDoc('fontSize', this.value); this.selectedIndex=0;" title="Font Size">
+                            <option value="" selected disabled>Size</option>
+                            <option value="1">Small</option>
+                            <option value="3">Normal</option>
+                            <option value="5">Large</option>
+                            <option value="7">Extra Large</option>
+                        </select>
+                        <select class="toolbar-select" onchange="formatDoc('formatBlock', this.value); this.selectedIndex=0;" title="Text Style">
+                            <option value="" selected disabled>Style</option>
+                            <option value="p">Paragraph</option>
+                            <option value="h1">Heading 1</option>
+                            <option value="h2">Heading 2</option>
+                            <option value="h3">Heading 3</option>
+                        </select>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" onclick="formatDoc('insertUnorderedList')" title="Bullet List">• List</button>
+                        <button class="toolbar-btn" onclick="formatDoc('insertOrderedList')" title="Numbered List">1. List</button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" onclick="formatDoc('justifyLeft')" title="Align Left">⬅</button>
+                        <button class="toolbar-btn" onclick="formatDoc('justifyCenter')" title="Align Center">↔</button>
+                        <button class="toolbar-btn" onclick="formatDoc('justifyRight')" title="Align Right">➡</button>
+                    </div>
+                    <div class="toolbar-group">
+                        <button class="toolbar-btn" onclick="formatDoc('removeFormat')" title="Clear Formatting">Clear</button>
+                    </div>
+                </div>
+                <div id="notepad" class="notepad" contenteditable="true" data-placeholder="Start typing your notes here..."></div>
             </section>
         </main>
     </div>
