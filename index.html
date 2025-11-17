@@ -15,6 +15,7 @@
                 <div class="date" id="date"></div>
             </div>
             <div class="greeting" id="greeting"></div>
+            <button class="widget-menu-btn bg-settings-btn" id="bgSettingsBtn" title="Background Settings">🎨</button>
             <button class="widget-menu-btn" id="widgetMenuBtn" title="Restore Widgets">⚙️</button>
         </header>
 
@@ -23,6 +24,58 @@
             <div class="widget-menu-content">
                 <h3>Restore Widgets</h3>
                 <div class="widget-menu-list" id="widgetMenuList"></div>
+            </div>
+        </div>
+
+        <!-- Quick Search Modal -->
+        <div class="search-modal" id="searchModal">
+            <div class="search-modal-content">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search sites, todos, notes... (Ctrl+K)">
+                <div class="search-results" id="searchResults"></div>
+            </div>
+        </div>
+
+        <!-- Background Customization Panel -->
+        <div class="bg-panel" id="bgPanel">
+            <div class="bg-panel-content">
+                <h3>Background Settings</h3>
+                <div class="bg-option">
+                    <label>Background Type:</label>
+                    <select id="bgType" class="bg-select">
+                        <option value="gradient">Gradient (Default)</option>
+                        <option value="image">Custom Image</option>
+                        <option value="solid">Solid Color</option>
+                    </select>
+                </div>
+                <div class="bg-option" id="gradientOptions">
+                    <label>Gradient Preset:</label>
+                    <select id="gradientPreset" class="bg-select">
+                        <option value="default">Dark Blue</option>
+                        <option value="ocean">Ocean</option>
+                        <option value="sunset">Sunset</option>
+                        <option value="forest">Forest</option>
+                        <option value="purple">Purple Haze</option>
+                        <option value="fire">Fire</option>
+                    </select>
+                </div>
+                <div class="bg-option" id="imageOptions" style="display:none;">
+                    <label>Image URL:</label>
+                    <input type="text" id="bgImageUrl" class="input" placeholder="https://example.com/image.jpg">
+                    <button class="btn btn-primary" id="applyImageBtn">Apply Image</button>
+                </div>
+                <div class="bg-option" id="solidOptions" style="display:none;">
+                    <label>Color:</label>
+                    <input type="color" id="bgSolidColor" value="#0f0f0f">
+                </div>
+                <div class="bg-option">
+                    <label>Blur: <span id="blurValue">0</span>px</label>
+                    <input type="range" id="bgBlur" min="0" max="20" value="0" class="bg-slider">
+                </div>
+                <div class="bg-option">
+                    <label>Opacity: <span id="opacityValue">100</span>%</label>
+                    <input type="range" id="bgOpacity" min="50" max="100" value="100" class="bg-slider">
+                </div>
+                <button class="btn btn-secondary" id="resetBgBtn">Reset to Default</button>
             </div>
         </div>
 
@@ -68,6 +121,7 @@
                 <div class="widget-content">
                     <div class="sites-grid" id="sitesGrid"></div>
                 </div>
+                <div class="widget-resize-handle"></div>
             </section>
 
             <!-- Todo List Widget -->
@@ -87,6 +141,7 @@
                     </div>
                     <ul class="todo-list" id="todoList"></ul>
                 </div>
+                <div class="widget-resize-handle"></div>
             </section>
 
             <!-- Notepad Widget -->
@@ -139,6 +194,7 @@
                     </div>
                     <div id="notepad" class="notepad" contenteditable="true" data-placeholder="Start typing your notes here..."></div>
                 </div>
+                <div class="widget-resize-handle"></div>
             </section>
         </main>
 

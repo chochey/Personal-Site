@@ -3,7 +3,8 @@ const STORAGE_KEYS = {
     SITES: 'pinnedSites',
     TODOS: 'todos',
     NOTES: 'notes',
-    WIDGETS: 'widgetStates'
+    WIDGETS: 'widgetStates',
+    BACKGROUND: 'backgroundSettings'
 };
 
 // Widget state
@@ -19,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initPinnedSites();
     initTodos();
     initNotepad();
+    initSearch();
+    initBackground();
+    initKeyboardShortcuts();
 });
 
 // ===== TIME & DATE =====
@@ -79,6 +83,12 @@ function initWidgets() {
         if (state.x && state.y) {
             widget.style.left = state.x + 'px';
             widget.style.top = state.y + 'px';
+        }
+
+        // Apply saved size
+        if (state.width && state.height) {
+            widget.style.width = state.width + 'px';
+            widget.style.height = state.height + 'px';
         }
 
         // Apply saved custom name
@@ -178,6 +188,9 @@ function initWidgets() {
             e.stopPropagation();
             closeWidget(widgetId);
         });
+
+        // Setup resize handle
+        setupWidgetResize(widget, widgetId);
     });
 
     // Setup widget menu
@@ -422,6 +435,7 @@ function createNewWidget(type) {
         <div class="widget-content">
             ${template.content}
         </div>
+        <div class="widget-resize-handle"></div>
     `;
 
     dashboard.appendChild(widget);
@@ -430,6 +444,7 @@ function createNewWidget(type) {
     const widgetId = newWidgetId;
     setupWidgetDragging(widget, widgetId);
     setupWidgetControls(widget, widgetId);
+    setupWidgetResize(widget, widgetId);
 
     // Initialize widget-specific functionality
     if (type === 'notepad') {
@@ -521,6 +536,59 @@ function setupWidgetControls(widget, widgetId) {
     });
 }
 
+function setupWidgetResize(widget, widgetId) {
+    const resizeHandle = widget.querySelector('.widget-resize-handle');
+    if (!resizeHandle) return;
+
+    let isResizing = false;
+    let startX, startY, startWidth, startHeight;
+
+    const resizeStart = (e) => {
+        isResizing = true;
+        startX = e.clientX;
+        startY = e.clientY;
+
+        const rect = widget.getBoundingClientRect();
+        startWidth = rect.width;
+        startHeight = rect.height;
+
+        widget.classList.add('resizing');
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const resize = (e) => {
+        if (!isResizing) return;
+        e.preventDefault();
+
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        const newWidth = Math.max(250, startWidth + dx);
+        const newHeight = Math.max(200, startHeight + dy);
+
+        widget.style.width = newWidth + 'px';
+        widget.style.height = newHeight + 'px';
+    };
+
+    const resizeEnd = () => {
+        if (!isResizing) return;
+        isResizing = false;
+        widget.classList.remove('resizing');
+
+        // Save size
+        const rect = widget.getBoundingClientRect();
+        saveWidgetState(widgetId, {
+            width: rect.width,
+            height: rect.height
+        });
+    };
+
+    resizeHandle.addEventListener('mousedown', resizeStart);
+    document.addEventListener('mousemove', resize);
+    document.addEventListener('mouseup', resizeEnd);
+}
+
 function initNotepadWidget(widgetId) {
     const notepad = document.getElementById(`notepad-${widgetId}`);
     const saveStatus = document.getElementById(`saveStatus-${widgetId}`);
@@ -594,6 +662,8 @@ function renderSites() {
     pinnedSites.forEach((site, index) => {
         const siteEl = document.createElement('div');
         siteEl.className = 'site-item';
+        siteEl.draggable = true;
+        siteEl.dataset.index = index;
 
         // Extract domain for favicon
         const faviconUrl = getFaviconUrl(site.url);
@@ -607,8 +677,80 @@ function renderSites() {
             <button class="delete-site" onclick="deleteSite(event, ${index})" title="Delete">×</button>
         `;
 
+        // Drag event listeners
+        siteEl.addEventListener('dragstart', handleSiteDragStart);
+        siteEl.addEventListener('dragover', handleSiteDragOver);
+        siteEl.addEventListener('drop', handleSiteDrop);
+        siteEl.addEventListener('dragend', handleSiteDragEnd);
+        siteEl.addEventListener('dragenter', handleSiteDragEnter);
+        siteEl.addEventListener('dragleave', handleSiteDragLeave);
+
         grid.appendChild(siteEl);
     });
+}
+
+let draggedSiteIndex = null;
+
+function handleSiteDragStart(e) {
+    // Only allow dragging from the site element itself, not from links or buttons
+    if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+        e.preventDefault();
+        return;
+    }
+
+    draggedSiteIndex = parseInt(e.currentTarget.dataset.index);
+    e.currentTarget.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleSiteDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleSiteDragEnter(e) {
+    const siteItem = e.target.closest('.site-item');
+    if (siteItem) {
+        siteItem.classList.add('drag-over');
+    }
+}
+
+function handleSiteDragLeave(e) {
+    const siteItem = e.target.closest('.site-item');
+    if (siteItem && !siteItem.contains(e.relatedTarget)) {
+        siteItem.classList.remove('drag-over');
+    }
+}
+
+function handleSiteDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const dropTarget = e.target.closest('.site-item');
+    if (!dropTarget) return;
+
+    const dropIndex = parseInt(dropTarget.dataset.index);
+
+    if (draggedSiteIndex !== null && draggedSiteIndex !== dropIndex) {
+        // Reorder the array
+        const draggedItem = pinnedSites[draggedSiteIndex];
+        pinnedSites.splice(draggedSiteIndex, 1);
+        pinnedSites.splice(dropIndex, 0, draggedItem);
+
+        saveSitesToStorage();
+        renderSites();
+    }
+
+    return false;
+}
+
+function handleSiteDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
+    document.querySelectorAll('.site-item').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+    draggedSiteIndex = null;
 }
 
 function getFaviconUrl(url) {
@@ -721,6 +863,8 @@ function renderTodos() {
     todos.forEach((todo, index) => {
         const li = document.createElement('li');
         li.className = `todo-item ${todo.completed ? 'completed' : ''}`;
+        li.draggable = true;
+        li.dataset.index = index;
 
         li.innerHTML = `
             <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''}
@@ -729,8 +873,69 @@ function renderTodos() {
             <button class="todo-delete" onclick="deleteTodo(${index})">×</button>
         `;
 
+        // Drag event listeners
+        li.addEventListener('dragstart', handleTodoDragStart);
+        li.addEventListener('dragover', handleTodoDragOver);
+        li.addEventListener('drop', handleTodoDrop);
+        li.addEventListener('dragend', handleTodoDragEnd);
+        li.addEventListener('dragenter', handleTodoDragEnter);
+        li.addEventListener('dragleave', handleTodoDragLeave);
+
         list.appendChild(li);
     });
+}
+
+let draggedTodoIndex = null;
+
+function handleTodoDragStart(e) {
+    draggedTodoIndex = parseInt(e.target.dataset.index);
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleTodoDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleTodoDragEnter(e) {
+    if (e.target.classList.contains('todo-item')) {
+        e.target.classList.add('drag-over');
+    }
+}
+
+function handleTodoDragLeave(e) {
+    if (e.target.classList.contains('todo-item')) {
+        e.target.classList.remove('drag-over');
+    }
+}
+
+function handleTodoDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const dropIndex = parseInt(e.target.closest('.todo-item').dataset.index);
+
+    if (draggedTodoIndex !== null && draggedTodoIndex !== dropIndex) {
+        // Reorder the array
+        const draggedItem = todos[draggedTodoIndex];
+        todos.splice(draggedTodoIndex, 1);
+        todos.splice(dropIndex, 0, draggedItem);
+
+        saveTodosToStorage();
+        renderTodos();
+    }
+
+    return false;
+}
+
+function handleTodoDragEnd(e) {
+    e.target.classList.remove('dragging');
+    document.querySelectorAll('.todo-item').forEach(item => {
+        item.classList.remove('drag-over');
+    });
+    draggedTodoIndex = null;
 }
 
 function addTodo() {
@@ -800,4 +1005,293 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ===== QUICK SEARCH =====
+function initSearch() {
+    const searchModal = document.getElementById('searchModal');
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+
+    searchInput.addEventListener('input', () => {
+        const query = searchInput.value.toLowerCase().trim();
+        if (!query) {
+            searchResults.innerHTML = '';
+            return;
+        }
+
+        const results = [];
+
+        // Search pinned sites
+        pinnedSites.forEach((site, index) => {
+            if (site.name.toLowerCase().includes(query) || site.url.toLowerCase().includes(query)) {
+                results.push({
+                    type: 'site',
+                    icon: '📌',
+                    title: site.name,
+                    subtitle: site.url,
+                    action: () => window.open(site.url, '_blank')
+                });
+            }
+        });
+
+        // Search todos
+        todos.forEach((todo, index) => {
+            if (todo.text.toLowerCase().includes(query)) {
+                results.push({
+                    type: 'todo',
+                    icon: '✓',
+                    title: todo.text,
+                    subtitle: todo.completed ? 'Completed' : 'Pending',
+                    action: () => {
+                        const todoWidget = document.getElementById('widget-todos');
+                        if (todoWidget.classList.contains('closed')) {
+                            restoreWidget('todos');
+                        }
+                        if (todoWidget.classList.contains('minimized')) {
+                            restoreFromBar('todos');
+                        }
+                        closeSearch();
+                    }
+                });
+            }
+        });
+
+        // Search notepad content
+        const notepad = document.getElementById('notepad');
+        const notepadText = notepad.textContent.toLowerCase();
+        if (notepadText.includes(query)) {
+            results.push({
+                type: 'note',
+                icon: '📝',
+                title: 'Notepad',
+                subtitle: 'Found in notepad content',
+                action: () => {
+                    const notepadWidget = document.getElementById('widget-notepad');
+                    if (notepadWidget.classList.contains('closed')) {
+                        restoreWidget('notepad');
+                    }
+                    if (notepadWidget.classList.contains('minimized')) {
+                        restoreFromBar('notepad');
+                    }
+                    closeSearch();
+                }
+            });
+        }
+
+        renderSearchResults(results);
+    });
+
+    // Close on outside click
+    searchModal.addEventListener('click', (e) => {
+        if (e.target === searchModal) {
+            closeSearch();
+        }
+    });
+}
+
+function renderSearchResults(results) {
+    const searchResults = document.getElementById('searchResults');
+
+    if (results.length === 0) {
+        searchResults.innerHTML = '<div class="search-no-results">No results found</div>';
+        return;
+    }
+
+    searchResults.innerHTML = results.map(result => `
+        <div class="search-result-item" data-type="${result.type}">
+            <div class="search-result-icon">${result.icon}</div>
+            <div class="search-result-content">
+                <div class="search-result-title">${escapeHtml(result.title)}</div>
+                <div class="search-result-subtitle">${escapeHtml(result.subtitle)}</div>
+            </div>
+        </div>
+    `).join('');
+
+    // Add click handlers
+    const items = searchResults.querySelectorAll('.search-result-item');
+    items.forEach((item, index) => {
+        item.addEventListener('click', () => {
+            results[index].action();
+        });
+    });
+}
+
+function openSearch() {
+    const searchModal = document.getElementById('searchModal');
+    const searchInput = document.getElementById('searchInput');
+    searchModal.classList.add('active');
+    searchInput.value = '';
+    searchInput.focus();
+    document.getElementById('searchResults').innerHTML = '';
+}
+
+function closeSearch() {
+    document.getElementById('searchModal').classList.remove('active');
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+function initKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+K or Cmd+K for search
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            openSearch();
+        }
+
+        // Escape to close modals
+        if (e.key === 'Escape') {
+            closeSearch();
+            document.getElementById('widgetMenu').classList.remove('active');
+            document.getElementById('newWidgetMenu').classList.remove('active');
+            document.getElementById('bgPanel').classList.remove('active');
+            closeSiteModal();
+        }
+    });
+}
+
+// ===== BACKGROUND CUSTOMIZATION =====
+const gradients = {
+    default: 'linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%)',
+    ocean: 'linear-gradient(135deg, #0a1931 0%, #185a8d 50%, #0a1931 100%)',
+    sunset: 'linear-gradient(135deg, #1a0a0a 0%, #4a1e1e 50%, #1a0a0a 100%)',
+    forest: 'linear-gradient(135deg, #0a1a0a 0%, #1e4a1e 50%, #0a1a0a 100%)',
+    purple: 'linear-gradient(135deg, #1a0a2e 0%, #4a1e5a 50%, #1a0a2e 100%)',
+    fire: 'linear-gradient(135deg, #2e1a0a 0%, #5a3a1e 50%, #2e1a0a 100%)'
+};
+
+function initBackground() {
+    const bgPanel = document.getElementById('bgPanel');
+    const bgSettingsBtn = document.getElementById('bgSettingsBtn');
+    const bgType = document.getElementById('bgType');
+    const gradientPreset = document.getElementById('gradientPreset');
+    const bgImageUrl = document.getElementById('bgImageUrl');
+    const applyImageBtn = document.getElementById('applyImageBtn');
+    const bgSolidColor = document.getElementById('bgSolidColor');
+    const bgBlur = document.getElementById('bgBlur');
+    const bgOpacity = document.getElementById('bgOpacity');
+    const resetBgBtn = document.getElementById('resetBgBtn');
+
+    // Load saved settings
+    loadBackgroundSettings();
+
+    // Toggle panel
+    bgSettingsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        bgPanel.classList.toggle('active');
+    });
+
+    // Close panel when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!bgPanel.contains(e.target) && e.target !== bgSettingsBtn) {
+            bgPanel.classList.remove('active');
+        }
+    });
+
+    // Background type change
+    bgType.addEventListener('change', () => {
+        const type = bgType.value;
+        document.getElementById('gradientOptions').style.display = type === 'gradient' ? 'block' : 'none';
+        document.getElementById('imageOptions').style.display = type === 'image' ? 'block' : 'none';
+        document.getElementById('solidOptions').style.display = type === 'solid' ? 'block' : 'none';
+
+        applyBackground();
+    });
+
+    // Gradient preset change
+    gradientPreset.addEventListener('change', applyBackground);
+
+    // Image URL apply
+    applyImageBtn.addEventListener('click', applyBackground);
+
+    // Solid color change
+    bgSolidColor.addEventListener('input', applyBackground);
+
+    // Blur slider
+    bgBlur.addEventListener('input', () => {
+        document.getElementById('blurValue').textContent = bgBlur.value;
+        applyBackground();
+    });
+
+    // Opacity slider
+    bgOpacity.addEventListener('input', () => {
+        document.getElementById('opacityValue').textContent = bgOpacity.value;
+        applyBackground();
+    });
+
+    // Reset button
+    resetBgBtn.addEventListener('click', () => {
+        bgType.value = 'gradient';
+        gradientPreset.value = 'default';
+        bgBlur.value = 0;
+        bgOpacity.value = 100;
+        document.getElementById('blurValue').textContent = '0';
+        document.getElementById('opacityValue').textContent = '100';
+        document.getElementById('gradientOptions').style.display = 'block';
+        document.getElementById('imageOptions').style.display = 'none';
+        document.getElementById('solidOptions').style.display = 'none';
+        applyBackground();
+    });
+}
+
+function applyBackground() {
+    const bgType = document.getElementById('bgType').value;
+    const gradientPreset = document.getElementById('gradientPreset').value;
+    const bgImageUrl = document.getElementById('bgImageUrl').value;
+    const bgSolidColor = document.getElementById('bgSolidColor').value;
+    const blur = document.getElementById('bgBlur').value;
+    const opacity = document.getElementById('bgOpacity').value / 100;
+
+    let background = '';
+
+    if (bgType === 'gradient') {
+        background = gradients[gradientPreset] || gradients.default;
+    } else if (bgType === 'image' && bgImageUrl) {
+        background = `url('${bgImageUrl}')`;
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundAttachment = 'fixed';
+    } else if (bgType === 'solid') {
+        background = bgSolidColor;
+    }
+
+    document.body.style.background = background;
+    document.body.style.filter = `blur(${blur}px)`;
+    document.body.style.opacity = opacity;
+
+    // Save settings
+    const settings = {
+        type: bgType,
+        gradient: gradientPreset,
+        imageUrl: bgImageUrl,
+        solidColor: bgSolidColor,
+        blur,
+        opacity: opacity * 100
+    };
+
+    localStorage.setItem(STORAGE_KEYS.BACKGROUND, JSON.stringify(settings));
+}
+
+function loadBackgroundSettings() {
+    const saved = localStorage.getItem(STORAGE_KEYS.BACKGROUND);
+    if (!saved) return;
+
+    const settings = JSON.parse(saved);
+
+    document.getElementById('bgType').value = settings.type || 'gradient';
+    document.getElementById('gradientPreset').value = settings.gradient || 'default';
+    document.getElementById('bgImageUrl').value = settings.imageUrl || '';
+    document.getElementById('bgSolidColor').value = settings.solidColor || '#0f0f0f';
+    document.getElementById('bgBlur').value = settings.blur || 0;
+    document.getElementById('bgOpacity').value = settings.opacity || 100;
+    document.getElementById('blurValue').textContent = settings.blur || 0;
+    document.getElementById('opacityValue').textContent = settings.opacity || 100;
+
+    // Show correct options
+    const type = settings.type || 'gradient';
+    document.getElementById('gradientOptions').style.display = type === 'gradient' ? 'block' : 'none';
+    document.getElementById('imageOptions').style.display = type === 'image' ? 'block' : 'none';
+    document.getElementById('solidOptions').style.display = type === 'solid' ? 'block' : 'none';
+
+    applyBackground();
 }
