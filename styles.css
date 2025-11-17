@@ -462,10 +462,15 @@ body {
     border-radius: 16px;
     border: 1px solid var(--border-color);
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    min-width: 350px;
+    min-width: 300px;
+    min-height: 250px;
     max-width: 600px;
     z-index: 1;
     transition: box-shadow 0.2s;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .widget:hover {
@@ -514,6 +519,7 @@ body {
     border-bottom: 1px solid var(--border-color);
     cursor: grab;
     user-select: none;
+    flex-shrink: 0;
 }
 
 .widget-header:active {
@@ -585,6 +591,9 @@ body {
 
 .widget-content {
     padding: 20px;
+    overflow: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .widget-resize-handle {
@@ -595,6 +604,7 @@ body {
     height: 20px;
     cursor: nwse-resize;
     z-index: 10;
+    flex-shrink: 0;
 }
 
 .widget-resize-handle::after {

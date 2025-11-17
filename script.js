@@ -520,8 +520,8 @@ function setupWidgetResize(widget, widgetId) {
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
 
-        const newWidth = Math.max(250, startWidth + dx);
-        const newHeight = Math.max(200, startHeight + dy);
+        const newWidth = Math.max(300, startWidth + dx);
+        const newHeight = Math.max(250, startHeight + dy);
 
         widget.style.width = newWidth + 'px';
         widget.style.height = newHeight + 'px';
