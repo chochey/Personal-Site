@@ -2019,6 +2019,76 @@ select {
     color: rgba(255, 255, 255, 0.4);
 }
 
+/* ===== COLOR PICKER MENU ===== */
+.color-picker-menu {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    z-index: 10000;
+    animation: fadeIn 0.2s ease;
+}
+
+.color-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.color-option:hover {
+    transform: scale(1.15) translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: var(--accent-primary);
+}
+
+.color-option-yellow {
+    background: linear-gradient(135deg, #fff7b0 0%, #ffe680 100%);
+}
+
+.color-option-blue {
+    background: linear-gradient(135deg, #b3d9ff 0%, #80c0ff 100%);
+}
+
+.color-option-green {
+    background: linear-gradient(135deg, #b8f3b8 0%, #80e680 100%);
+}
+
+.color-option-pink {
+    background: linear-gradient(135deg, #ffc0e0 0%, #ff99cc 100%);
+}
+
+.color-option-purple {
+    background: linear-gradient(135deg, #ddb3ff 0%, #c280ff 100%);
+}
+
+.color-option-orange {
+    background: linear-gradient(135deg, #ffd4b3 0%, #ffb380 100%);
+}
+
+.color-option-dark-blue {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+}
+
+.color-option-dark-green {
+    background: linear-gradient(135deg, #1e3a2e 0%, #2d5a3f 100%);
+}
+
+.color-option-dark-purple {
+    background: linear-gradient(135deg, #4a2c4a 0%, #6a3e6a 100%);
+}
+
+.color-option-dark-gray {
+    background: linear-gradient(135deg, #3a3a3a 0%, #505050 100%);
+}
+
 /* ===== ANIMATIONS & MICRO-INTERACTIONS ===== */
 @keyframes fadeIn {
     from {

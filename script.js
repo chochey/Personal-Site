@@ -1944,8 +1944,9 @@ function initSingleStickyNote(widgetId, widget) {
     // Setup color button
     const colorBtn = document.getElementById(`colorBtn-${widgetId}`);
     if (colorBtn) {
-        colorBtn.addEventListener('click', () => {
-            changeStickyNoteColorSingle(widgetId, widget);
+        colorBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showColorPicker(widgetId, widget, colorBtn);
         });
     }
 }
@@ -1963,23 +1964,73 @@ function saveStickyNoteData(widgetId, title, content) {
     saveWidgetState(widgetId, state);
 }
 
-function changeStickyNoteColorSingle(widgetId, widget) {
-    const colors = ['yellow', 'blue', 'green', 'pink', 'purple', 'orange', 'dark-blue', 'dark-green', 'dark-purple', 'dark-gray'];
+function showColorPicker(widgetId, widget, colorBtn) {
+    // Remove any existing color picker
+    const existingPicker = document.querySelector('.color-picker-menu');
+    if (existingPicker) {
+        existingPicker.remove();
+        return; // Toggle off if clicking again
+    }
+
+    const colors = [
+        { name: 'yellow', label: 'Yellow' },
+        { name: 'blue', label: 'Blue' },
+        { name: 'green', label: 'Green' },
+        { name: 'pink', label: 'Pink' },
+        { name: 'purple', label: 'Purple' },
+        { name: 'orange', label: 'Orange' },
+        { name: 'dark-blue', label: 'Dark Blue' },
+        { name: 'dark-green', label: 'Dark Green' },
+        { name: 'dark-purple', label: 'Dark Purple' },
+        { name: 'dark-gray', label: 'Dark Gray' }
+    ];
+
+    // Create color picker menu
+    const picker = document.createElement('div');
+    picker.className = 'color-picker-menu';
+
+    colors.forEach(color => {
+        const colorOption = document.createElement('div');
+        colorOption.className = `color-option color-option-${color.name}`;
+        colorOption.title = color.label;
+        colorOption.addEventListener('click', () => {
+            selectStickyNoteColor(widgetId, widget, color.name);
+            picker.remove();
+        });
+        picker.appendChild(colorOption);
+    });
+
+    // Position near the button
+    const rect = colorBtn.getBoundingClientRect();
+    picker.style.position = 'absolute';
+    picker.style.top = (rect.bottom + 5) + 'px';
+    picker.style.left = rect.left + 'px';
+
+    document.body.appendChild(picker);
+
+    // Close when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', function closeColorPicker(e) {
+            if (!picker.contains(e.target) && e.target !== colorBtn) {
+                picker.remove();
+                document.removeEventListener('click', closeColorPicker);
+            }
+        });
+    }, 0);
+}
+
+function selectStickyNoteColor(widgetId, widget, color) {
     const state = widgetStates[widgetId];
-    const currentColor = state?.stickyNoteData?.color || 'yellow';
-    const currentIndex = colors.indexOf(currentColor);
-    const nextIndex = (currentIndex + 1) % colors.length;
-    const nextColor = colors[nextIndex];
 
     // Update widget styling
-    widget.className = widget.className.replace(/widget-stickynote-\w+/, '');
-    widget.classList.add(`widget-stickynote-${nextColor}`);
+    widget.className = widget.className.replace(/widget-stickynote-[\w-]+/g, '');
+    widget.classList.add('widget-stickynote', `widget-stickynote-${color}`);
 
     // Save color
     if (state.stickyNoteData) {
-        state.stickyNoteData.color = nextColor;
+        state.stickyNoteData.color = color;
     } else {
-        state.stickyNoteData = { title: 'New Note', content: '', color: nextColor };
+        state.stickyNoteData = { title: 'New Note', content: '', color: color };
     }
 
     saveWidgetState(widgetId, state);
